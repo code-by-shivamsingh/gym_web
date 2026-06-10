@@ -1,4 +1,9 @@
+"use client";
+import { useRouter } from "next/navigation";
+
 export default function MembershipSection() {
+  const router = useRouter();
+  
   const plans = [
     {
       name: "Basic",
@@ -85,9 +90,20 @@ export default function MembershipSection() {
                 ))}
               </ul>
 
-              <button className="w-full mt-8 bg-yellow-400 text-black py-3 rounded-xl font-bold hover:scale-105 transition">
-                Join Now
-              </button>
+        <button
+onClick={() => router.push(`/join-premium?plan=${plan.name}`)}  className="
+  w-full mt-8
+  bg-yellow-400
+  text-black
+  py-3
+  rounded-xl
+  font-bold
+  hover:scale-105
+  transition
+  "
+>
+  Join Now
+</button>
             </div>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { URL_AUTH_LOGIN, URL_MEMBERS } from "@/src/constants/apis";
+import { URL_AUTH_FORGOT_PASSWORD, URL_AUTH_LOGIN, URL_AUTH_RESET_PASSWORD, URL_MEMBERS } from "@/src/constants/apis";
 
 interface LoginParams {
   email: string;
@@ -112,6 +112,40 @@ export const updateMember = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+    }
+  );
+
+  return await response.json();
+};
+export const forgotPassword = async (
+  email: string
+) => {
+  const response = await fetch(
+    URL_AUTH_FORGOT_PASSWORD,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    }
+  );
+
+  return await response.json();
+};
+
+export const resetPassword = async (
+  token: string,
+  password: string
+) => {
+  const response = await fetch(
+    `${URL_AUTH_RESET_PASSWORD}/${token}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password }),
     }
   );
 

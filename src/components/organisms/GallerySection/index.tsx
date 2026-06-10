@@ -9,7 +9,11 @@ export default function GallerySection() {
   ];
 
   return (
+    
     <section className="bg-zinc-950 text-white py-24 px-6">
+       <section id="gallery">
+  {/* Gallery Content */}
+</section>
       <div className="max-w-7xl mx-auto">
         
         {/* Heading */}
@@ -45,6 +49,7 @@ export default function GallerySection() {
               />
             </div>
           ))}
+         
         </div>
       </div>
     </section>
