@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local backend database and uploaded assets
+backend/data/
+backend/public/uploads/
+backend/node_modules/
+backend/mongo_log.txt
+backend/mongo_log_utf8.txt

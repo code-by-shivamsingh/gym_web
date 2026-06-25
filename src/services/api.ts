@@ -1,7 +1,7 @@
 
 
-import { KEY_HEADERS, KEY_BODY } from '@/constants/common';
-import { isEmpty } from '@/utils/helper';
+import { KEY_HEADERS, KEY_BODY } from '../constants/common';
+import { isEmpty } from '../utils/helper';
 export const CONTENT_TYPE_URL_ENCODED = 'application/x-www-form-urlencoded;charset=UTF-8';
 export const CONTENT_TYPE_APPLICATION = 'application/json';
 

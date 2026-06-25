@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { loginUser } from "@/src/dialogs/invoice_config/services";
-import Link from "next/link";
+
 export default function LoginSection() {
   const router = useRouter();
-const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -34,7 +36,7 @@ const [rememberMe, setRememberMe] = useState(false);
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black px-4">
 
       {/* Animated Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-black" />
@@ -49,7 +51,7 @@ const [rememberMe, setRememberMe] = useState(false);
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.7 }}
         whileHover={{ scale: 1.02 }}
-        className="w-full max-w-md bg-zinc-900/70 backdrop-blur-2xl border border-zinc-800 rounded-3xl p-8 shadow-2xl"
+        className="w-full max-w-md bg-zinc-900/70 backdrop-blur-2xl border border-zinc-800 rounded-3xl p-8 shadow-2xl z-10"
       >
 
         {/* Logo */}
@@ -74,70 +76,67 @@ const [rememberMe, setRememberMe] = useState(false);
 
           {/* Email */}
           <div>
-            <label className="text-gray-300">Email</label>
+            <label className="text-gray-300 block mb-1 text-sm font-semibold">Email</label>
             <input
               type="email"
               placeholder="Enter Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full mt-2 bg-black border border-zinc-700 text-white p-4 rounded-xl outline-none focus:border-yellow-400 focus:shadow-[0_0_20px_rgba(250,204,21,0.3)] transition"
+              required
             />
           </div>
 
           {/* Password */}
           <div>
-  <label className="text-gray-300">Password</label>
+            <label className="text-gray-300 block mb-1 text-sm font-semibold">Password</label>
 
-  <div className="relative">
-    <input
-      type={showPassword ? "text" : "password"}
-      placeholder="Enter Password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      className="w-full mt-2 bg-black border border-zinc-700 text-white p-4 rounded-xl outline-none focus:border-yellow-400"
-    />
+            <div className="relative mt-2">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black border border-zinc-700 text-white p-4 pr-16 rounded-xl outline-none focus:border-yellow-400 focus:shadow-[0_0_20px_rgba(250,204,21,0.3)] transition"
+                required
+              />
 
-    <button
-      type="button"
-      onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-4 top-1/2 -translate-y-1/2 text-yellow-400"
-    >
-      {showPassword ? "Hide" : "Show"}
-    </button>
-  </div>
-</div>
-<input
-  type={showPassword ? "text" : "password"}
-/>
-<button
-  type="button"
-  onClick={() => setShowPassword(!showPassword)}
->
-  {showPassword ? "Hide" : "Show"}
-</button>
-<div className="flex items-center justify-between">
-  <label className="flex items-center gap-2 text-gray-300">
-    <input
-      type="checkbox"
-      checked={rememberMe}
-      onChange={(e) => setRememberMe(e.target.checked)}
-    />
-    Remember Me
-  </label>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-yellow-400 font-semibold text-sm cursor-pointer bg-transparent border-none"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
 
- <Link
-  href="/forgot-password"
-  className="text-yellow-400 text-sm hover:underline"
->
-  Forgot Password?
-</Link>
-</div>
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between mt-4">
+            <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="accent-yellow-400 rounded cursor-pointer"
+              />
+              Remember Me
+            </label>
+
+            <Link
+              href="/forgot-password"
+              className="text-yellow-400 text-sm hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
+
           {/* Button */}
           <motion.button
             whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-yellow-400/40 transition"
+            className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-yellow-400/40 transition cursor-pointer border-none mt-6"
           >
             {loading ? "Logging In..." : "Login"}
           </motion.button>
@@ -146,9 +145,9 @@ const [rememberMe, setRememberMe] = useState(false);
         {/* Footer */}
         <p className="text-center mt-6 text-gray-400">
           Don't have an account?{" "}
-          <span className="text-yellow-400 font-semibold cursor-pointer hover:underline">
+          <Link href="/register" className="text-yellow-400 cursor-pointer font-semibold hover:underline">
             Register
-          </span>
+          </Link>
         </p>
 
       </motion.div>

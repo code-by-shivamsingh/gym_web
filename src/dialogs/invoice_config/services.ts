@@ -1,153 +1,381 @@
-import { URL_AUTH_FORGOT_PASSWORD, URL_AUTH_LOGIN, URL_AUTH_RESET_PASSWORD, URL_MEMBERS } from "@/src/constants/apis";
+import axiosClient from "@/src/services/axiosClient";
 
-interface LoginParams {
+export interface LoginParams {
   email: string;
   password: string;
 }
 
-interface LoginResponse {
-  success: boolean;
-  message: string;
-  token?: string;
+export interface RegisterParams {
+  name: string;
+  email: string;
+  mobile: string;
+  password: string;
+  role: string;
+  plan?: string;
 }
 
-export const loginUser = async (
-  params: LoginParams
-): Promise<LoginResponse> => {
+// ==========================================
+// AUTH SERVICES
+// ==========================================
+
+export const loginUser = async (params: LoginParams) => {
   try {
-    const response = await fetch(URL_AUTH_LOGIN, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: params.email,
-        password: params.password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        message:
-          data?.message || "Login failed",
-      };
-    }
-
+    const response = await axiosClient.post("/auth/login", params);
     return {
       success: true,
-      message: data.message,
-      token: data.token,
+      message: response.data.message,
+      token: response.data.token,
+      data: response.data,
     };
-  } catch (error) {
-    console.error(
-      "Login API Error:",
-      error
-    );
-
+  } catch (error: any) {
     return {
       success: false,
-      message:
-        "Unable to connect to server. Please try again.",
+      message: error.response?.data?.message || "Login failed",
     };
   }
 };
 
+export const registerUser = async (params: RegisterParams) => {
+  try {
+    const response = await axiosClient.post("/auth/register", params);
+    return {
+      success: true,
+      message: response.data.message,
+      token: response.data.token,
+      data: response.data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Registration failed",
+    };
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    const response = await axiosClient.post("/auth/logout");
+    return { success: true, message: response.data.message };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Logout failed" };
+  }
+};
+
+export const forgotPassword = async (email: string) => {
+  try {
+    const response = await axiosClient.post("/auth/forgot-password", { email });
+    return { success: true, message: response.data.message };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Operation failed" };
+  }
+};
+
+export const resetPassword = async (password: string, token: string) => {
+  try {
+    const response = await axiosClient.post("/auth/reset-password", { password, token });
+    return { success: true, message: response.data.message };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Reset failed" };
+  }
+};
+
+export const changePassword = async (data: any) => {
+  try {
+    const response = await axiosClient.post("/auth/change-password", data);
+    return { success: true, message: response.data.message };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Password change failed" };
+  }
+};
+
+// ==========================================
+// USER / PROFILE SERVICES
+// ==========================================
+
+export const getUserProfile = async () => {
+  try {
+    const response = await axiosClient.get("/users/profile");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to load profile" };
+  }
+};
+
+export const updateUserProfile = async (data: any) => {
+  try {
+    const response = await axiosClient.put("/users/profile", data);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Update failed" };
+  }
+};
+
+export const uploadAvatar = async (formData: FormData) => {
+  try {
+    const response = await axiosClient.post("/users/profile/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Upload failed" };
+  }
+};
+
+// ==========================================
+// MEMBER SERVICES
+// ==========================================
+
+export const getMembers = async () => {
+  try {
+    const response = await axiosClient.get("/members");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
+};
 
 export const getAllMembers = async () => {
   try {
-    const response = await fetch(URL_MEMBERS);
-
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    console.error("Get Members Error:", error);
-    throw error;
+    const response = await axiosClient.get("/members");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
   }
 };
 
-
 export const createMember = async (data: any) => {
-  const res = await fetch(`${URL_MEMBERS}/create`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return res.json();
+  try {
+    const response = await axiosClient.post("/members/create", data);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Creation failed" };
+  }
 };
 
-export const getMembers = async () => {
-  const response = await fetch(URL_MEMBERS);
-
-  return response.json();
+export const updateMember = async (id: string, data: any) => {
+  try {
+    const response = await axiosClient.patch(`/members/${id}`, data);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Update failed" };
+  }
 };
 
 export const deleteMember = async (id: string) => {
-  const response = await fetch(
-    `${URL_MEMBERS}/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
-
-  return response.json();
+  try {
+    const response = await axiosClient.delete(`/members/${id}`);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Deletion failed" };
+  }
 };
 
+// ==========================================
+// TRAINER SERVICES
+// ==========================================
 
-export const updateMember = async (
-  id: string,
-  data: any
-) => {
-  const response = await fetch(
-    `${URL_MEMBERS}/${id}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  return await response.json();
-};
-export const forgotPassword = async (
-  email: string
-) => {
-  const response = await fetch(
-    URL_AUTH_FORGOT_PASSWORD,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    }
-  );
-
-  return await response.json();
+export const getTrainers = async () => {
+  try {
+    const response = await axiosClient.get("/trainers");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
 };
 
-export const resetPassword = async (
-  token: string,
-  password: string
-) => {
-  const response = await fetch(
-    `${URL_AUTH_RESET_PASSWORD}/${token}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ password }),
-    }
-  );
+export const createTrainer = async (data: any) => {
+  try {
+    const response = await axiosClient.post("/trainers", data);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Trainer creation failed" };
+  }
+};
 
-  return await response.json();
+export const updateTrainer = async (id: string, data: any) => {
+  try {
+    const response = await axiosClient.put(`/trainers/${id}`, data);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Trainer update failed" };
+  }
+};
+
+export const deleteTrainer = async (id: string) => {
+  try {
+    const response = await axiosClient.delete(`/trainers/${id}`);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Trainer deletion failed" };
+  }
+};
+
+export const assignMembersToTrainer = async (trainerId: string, memberIds: string[]) => {
+  try {
+    const response = await axiosClient.post(`/trainers/${trainerId}/assign`, { memberIds });
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Assignment failed" };
+  }
+};
+
+// ==========================================
+// ATTENDANCE SERVICES
+// ==========================================
+
+export const getAttendanceHistory = async () => {
+  try {
+    const response = await axiosClient.get("/attendance/history");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
+};
+
+export const getAdminAttendanceOverview = async () => {
+  try {
+    const response = await axiosClient.get("/attendance/admin-overview");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
+};
+
+export const checkInAttendance = async () => {
+  try {
+    const response = await axiosClient.post("/attendance/check-in");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Check-in failed" };
+  }
+};
+
+export const checkOutAttendance = async () => {
+  try {
+    const response = await axiosClient.post("/attendance/check-out");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Check-out failed" };
+  }
+};
+
+// ==========================================
+// WORKOUT / DIET SERVICES
+// ==========================================
+
+export const getWorkoutPlans = async () => {
+  try {
+    const response = await axiosClient.get("/workouts");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
+};
+
+export const getDietPlans = async () => {
+  try {
+    const response = await axiosClient.get("/diet");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: {} };
+  }
+};
+
+// ==========================================
+// PAYMENTS & INVOICES SERVICES
+// ==========================================
+
+export const getPayments = async () => {
+  try {
+    const response = await axiosClient.get("/payments/history");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
+};
+
+export const createPaymentOrder = async (amount: number, method: string) => {
+  try {
+    const response = await axiosClient.post("/payments/create-order", { amount, method });
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to create order" };
+  }
+};
+
+export const verifyPayment = async (payload: any) => {
+  try {
+    const response = await axiosClient.post("/payments/verify", payload);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Verification failed" };
+  }
+};
+
+export const downloadInvoicePdf = async (paymentId: string) => {
+  try {
+    const response = await axiosClient.get(`/invoices/${paymentId}`, {
+      responseType: "blob",
+    });
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    return { success: false, message: "Failed to download invoice PDF" };
+  }
+};
+
+// ==========================================
+// DASHBOARD & REPORTS SERVICES
+// ==========================================
+
+export const getDashboardStats = async () => {
+  try {
+    const response = await axiosClient.get("/dashboard/stats");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null };
+  }
+};
+
+export const getReportsStats = async () => {
+  try {
+    const response = await axiosClient.get("/reports/summary");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null };
+  }
+};
+
+// ==========================================
+// SETTINGS SERVICES
+// ==========================================
+
+export const getSettings = async () => {
+  try {
+    const response = await axiosClient.get("/settings");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null };
+  }
+};
+
+export const updateSettings = async (data: any) => {
+  try {
+    const response = await axiosClient.put("/settings", data);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to update settings" };
+  }
+};
+
+// ==========================================
+// NOTIFICATION SERVICES
+// ==========================================
+
+export const getUserNotifications = async () => {
+  try {
+    const response = await axiosClient.get("/notifications");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
 };
