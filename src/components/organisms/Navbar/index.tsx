@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -16,6 +17,14 @@ export default function Navbar() {
     }
   };
 
+  const handleNavClick = (id: string) => {
+    if (pathname === "/" || pathname === "/home") {
+      scrollToSection(id);
+    } else {
+      router.push(`/#${id}`);
+    }
+  };
+
   return (
     <nav
       className="fixed top-0 left-0 w-full z-50 
@@ -25,7 +34,7 @@ export default function Navbar() {
       text-white border-b border-zinc-800"
     >
       {/* LOGO */}
-      <h1 className="text-2xl font-extrabold tracking-wide cursor-pointer">
+      <h1 className="text-2xl font-extrabold tracking-wide cursor-pointer" onClick={() => handleNavClick("home")}>
         <span className="text-yellow-400">FORGE</span>
         <span className="text-white">GYM</span>
       </h1>
@@ -35,40 +44,40 @@ export default function Navbar() {
 
         {/* HOME */}
         <button
-          onClick={() => scrollToSection("home")}
-          className="text-gray-300 hover:text-white transition"
+          onClick={() => handleNavClick("home")}
+          className="text-gray-300 hover:text-white transition cursor-pointer"
         >
           Home
         </button>
 
         {/* ABOUT */}
         <button
-          onClick={() => scrollToSection("about")}
-          className="text-gray-300 hover:text-white transition"
+          onClick={() => handleNavClick("about")}
+          className="text-gray-300 hover:text-white transition cursor-pointer"
         >
           About
         </button>
 
         {/* FEATURES */}
         <button
-          onClick={() => scrollToSection("features")}
-          className="text-gray-300 hover:text-white transition"
+          onClick={() => handleNavClick("features")}
+          className="text-gray-300 hover:text-white transition cursor-pointer"
         >
           Features
         </button>
 
         {/* TRAINERS */}
         <button
-          onClick={() => scrollToSection("trainers")}
-          className="text-gray-300 hover:text-white transition"
+          onClick={() => handleNavClick("trainers")}
+          className="text-gray-300 hover:text-white transition cursor-pointer"
         >
           Trainers
         </button>
 
         {/* CONTACT */}
         <button
-          onClick={() => scrollToSection("contact")}
-          className="text-gray-300 hover:text-white transition"
+          onClick={() => handleNavClick("contact")}
+          className="text-gray-300 hover:text-white transition cursor-pointer"
         >
           Contact
         </button>
@@ -76,7 +85,7 @@ export default function Navbar() {
         {/* LOGIN */}
         <button
           onClick={() => router.push("/login")}
-          className="bg-yellow-400 text-black px-6 py-2 rounded-xl font-bold hover:scale-105 transition"
+          className="bg-yellow-400 text-black px-6 py-2 rounded-xl font-bold hover:scale-105 transition cursor-pointer"
         >
           Login
         </button>

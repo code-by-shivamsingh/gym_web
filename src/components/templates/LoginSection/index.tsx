@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { loginUser } from "@/src/dialogs/invoice_config/services";
 
@@ -130,9 +131,9 @@ export default function LoginSection() {
 
         <p className="text-center mt-6 text-gray-400">
           Don't have an account?{" "}
-          <span className="text-yellow-400 cursor-pointer font-semibold">
+          <Link href="/register" className="text-yellow-400 cursor-pointer font-semibold">
             Register
-          </span>
+          </Link>
         </p>
       </motion.div>
     </div>
