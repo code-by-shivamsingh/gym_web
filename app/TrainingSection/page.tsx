@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function TrainingSection() {
+  const router = useRouter();
   const training = [
     {
       title: "Cardio Training",
@@ -117,6 +119,14 @@ export default function TrainingSection() {
                 </div>
 
                 <button
+                  onClick={() => {
+                    const token = typeof document !== 'undefined' ? document.cookie.split("; ").find((row) => row.startsWith("token=")) : null;
+                    if (token) {
+                      router.push("/dashboard");
+                    } else {
+                      router.push("/join");
+                    }
+                  }}
                   className="
                   mt-8
                   w-full
@@ -128,6 +138,10 @@ export default function TrainingSection() {
                   via-orange-500
                   to-red-500
                   text-black
+                  cursor-pointer
+                  hover:scale-[1.02]
+                  transition
+                  duration-300
                   "
                 >
                   Start Training

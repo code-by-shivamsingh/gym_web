@@ -108,6 +108,13 @@ export default function AdminLayout({
             </Link>
 
             <Link
+              href="/admin/settings"
+              className="block p-4 rounded-xl bg-zinc-900 hover:bg-yellow-400 hover:text-black transition"
+            >
+              ⚙ Settings
+            </Link>
+
+            <Link
               href="/home"
               className="block p-4 rounded-xl bg-zinc-900 text-center font-bold hover:bg-yellow-400 hover:text-black transition text-gray-300"
             >

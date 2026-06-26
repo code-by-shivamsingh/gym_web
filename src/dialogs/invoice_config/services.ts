@@ -70,6 +70,15 @@ export const forgotPassword = async (email: string) => {
   }
 };
 
+export const verifyOtp = async (email: string, otp: string) => {
+  try {
+    const response = await axiosClient.post("/auth/verify-otp", { email, otp });
+    return { success: true, message: response.data.message, token: response.data.token };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Verification failed" };
+  }
+};
+
 export const resetPassword = async (password: string, token: string) => {
   try {
     const response = await axiosClient.post("/auth/reset-password", { password, token });

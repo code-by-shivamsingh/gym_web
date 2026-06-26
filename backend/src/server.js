@@ -54,6 +54,28 @@ app.use('*', (req, res) => {
 // Central Error Handler
 app.use(errorHandler);
 
+// Auto-free port if in use (Windows development only)
+if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
+  try {
+    const { execSync } = require('child_process');
+    const port = config.PORT || 5000;
+    const stdout = execSync('netstat -ano').toString();
+    const lines = stdout.split('\n');
+    for (const line of lines) {
+      if (line.includes(`:${port}`) && line.includes('LISTENING')) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (pid && !isNaN(pid) && parseInt(pid) !== process.pid) {
+          logger.info(`Port ${port} in use by process ${pid}. Killing it to free up the port...`);
+          execSync(`taskkill /F /PID ${pid}`);
+        }
+      }
+    }
+  } catch (err) {
+    logger.warn(`Could not check/free port ${config.PORT}: ${err.message}`);
+  }
+}
+
 // Start Server
 const server = app.listen(config.PORT, () => {
   logger.info(`Server running in development mode on port ${config.PORT}`);

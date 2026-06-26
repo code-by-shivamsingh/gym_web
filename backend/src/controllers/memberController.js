@@ -92,6 +92,7 @@ const updateMember = async (req, res) => {
       const userUpdate = {};
       if (name) userUpdate.name = name;
       if (mobile) userUpdate.mobile = mobile;
+      if (email) userUpdate.email = email;
       await User.findByIdAndUpdate(member.user, { $set: userUpdate });
     }
 

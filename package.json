@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "frontend": "next dev",
+    "frontend": "next dev --webpack",
     "backend": "npm run dev --prefix backend",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "build": "next build",

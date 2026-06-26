@@ -106,7 +106,7 @@ const downloadInvoice = async (req, res) => {
     if (!settings) {
       settings = {
         gymName: 'Forge Gym',
-        address: '123 Strength Ave, Fitness City',
+        address: 'Gwalior, Madhya Pradesh (M.P.), India',
         mobile: '+1234567890',
         taxRate: 18
       };

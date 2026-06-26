@@ -38,7 +38,7 @@ export default function ContactSection() {
                   📍 Address
                 </h4>
                 <p className="text-gray-400">
-                  Dadri, Uttar Pradesh, India
+                  Gwalior, Madhya Pradesh, India
                 </p>
               </div>
 

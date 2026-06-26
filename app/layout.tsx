@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GlobalToastProvider from "@/src/components/atoms/GlobalToastProvider";
+import FloatingWhatsApp from "@/src/components/atoms/FloatingWhatsApp";
 
 const geistSans = {
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <GlobalToastProvider />
+        <FloatingWhatsApp />
       </body>
     </html>
   );

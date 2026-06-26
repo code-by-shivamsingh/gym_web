@@ -7,8 +7,9 @@ import { getSettings, updateSettings } from "@/src/dialogs/invoice_config/servic
 export default function AdminSettingsPage() {
   const [formData, setFormData] = useState({
     gymName: "Forge Gym",
-    address: "123 Strength Ave, Fitness City",
+    address: "Gwalior, Madhya Pradesh (M.P.), India",
     mobile: "+1234567890",
+    whatsapp: "+919876543210",
     taxRate: 18,
   });
   const [loading, setLoading] = useState(false);
@@ -24,8 +25,9 @@ export default function AdminSettingsPage() {
       if (res.success && res.data) {
         setFormData({
           gymName: res.data.gymName || "Forge Gym",
-          address: res.data.address || "123 Strength Ave, Fitness City",
+          address: res.data.address || "Gwalior, Madhya Pradesh (M.P.), India",
           mobile: res.data.mobile || "+1234567890",
+          whatsapp: res.data.whatsapp || "+919876543210",
           taxRate: res.data.taxRate || 18,
         });
       }
@@ -61,24 +63,35 @@ export default function AdminSettingsPage() {
         <p className="text-gray-400 mb-8">Manage global gym variables and billing parameters.</p>
 
         <form onSubmit={handleSave} className="bg-black border border-zinc-800 rounded-3xl p-8 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-300 mb-2">Gym Name</label>
-              <input
-                type="text"
-                value={formData.gymName}
-                onChange={(e) => setFormData({ ...formData, gymName: e.target.value })}
-                className="w-full bg-zinc-900 border border-zinc-700 p-4 rounded-xl text-white outline-none focus:border-yellow-400"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">Gym Name</label>
+            <input
+              type="text"
+              value={formData.gymName}
+              onChange={(e) => setFormData({ ...formData, gymName: e.target.value })}
+              className="w-full bg-zinc-900 border border-zinc-700 p-4 rounded-xl text-white outline-none focus:border-yellow-400"
+              required
+            />
+          </div>
 
+          <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-300 mb-2">Contact Mobile</label>
               <input
                 type="text"
                 value={formData.mobile}
                 onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                className="w-full bg-zinc-900 border border-zinc-700 p-4 rounded-xl text-white outline-none focus:border-yellow-400"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">WhatsApp Support Number</label>
+              <input
+                type="text"
+                value={formData.whatsapp}
+                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                 className="w-full bg-zinc-900 border border-zinc-700 p-4 rounded-xl text-white outline-none focus:border-yellow-400"
                 required
               />

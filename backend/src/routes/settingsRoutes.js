@@ -4,9 +4,9 @@ const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.use(protect);
-
 router.get('/', getSettings);
+
+router.use(protect);
 router.put('/', authorize('Admin'), updateSettings);
 
 module.exports = router;

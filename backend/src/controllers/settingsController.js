@@ -10,8 +10,9 @@ const getSettings = async (req, res) => {
       // Create defaults if not found
       settings = await Settings.create({
         gymName: 'Forge Gym',
-        address: '123 Strength Ave, Fitness City',
+        address: 'Gwalior, Madhya Pradesh (M.P.), India',
         mobile: '+1234567890',
+        whatsapp: '+919876543210',
         taxRate: 18
       });
     }
@@ -27,7 +28,7 @@ const getSettings = async (req, res) => {
 // @access  Private (Admin)
 const updateSettings = async (req, res) => {
   try {
-    const { gymName, address, mobile, taxRate } = req.body;
+    const { gymName, address, mobile, whatsapp, taxRate } = req.body;
 
     let settings = await Settings.findOne();
     
@@ -35,6 +36,7 @@ const updateSettings = async (req, res) => {
     if (gymName) updateData.gymName = gymName;
     if (address) updateData.address = address;
     if (mobile) updateData.mobile = mobile;
+    if (whatsapp) updateData.whatsapp = whatsapp;
     if (taxRate !== undefined) updateData.taxRate = Number(taxRate);
 
     if (!settings) {

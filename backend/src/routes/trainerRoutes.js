@@ -10,9 +10,10 @@ const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.get('/', getTrainers);
+
 router.use(protect);
 
-router.get('/', getTrainers);
 router.post('/', authorize('Admin'), createTrainer);
 router.put('/:id', authorize('Admin'), updateTrainer);
 router.delete('/:id', authorize('Admin'), deleteTrainer);

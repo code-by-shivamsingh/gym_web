@@ -9,12 +9,17 @@ const SettingsSchema = new mongoose.Schema({
   address: {
     type: String,
     required: true,
-    default: '123 Strength Ave, Fitness City'
+    default: 'Gwalior, Madhya Pradesh (M.P.), India'
   },
   mobile: {
     type: String,
     required: true,
     default: '+1234567890'
+  },
+  whatsapp: {
+    type: String,
+    required: true,
+    default: '+919876543210'
   },
   taxRate: {
     type: Number,

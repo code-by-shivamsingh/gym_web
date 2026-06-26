@@ -28,7 +28,7 @@ export default function Footer() {
 
             <ul className="space-y-3 text-gray-400">
               <li>
-                <Link href="/home">Home</Link>
+                <Link href="/">Home</Link>
               </li>
 
               <li>
@@ -36,7 +36,11 @@ export default function Footer() {
               </li>
 
               <li>
-                <Link href="/plans">Membership</Link>
+                <Link href="/services">Services</Link>
+              </li>
+
+              <li>
+                <Link href="/membership">Membership</Link>
               </li>
 
               <li>
@@ -66,7 +70,7 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-3 text-gray-400">
-              <li>📍 Dadri, Uttar Pradesh</li>
+              <li>📍 Gwalior, Madhya Pradesh, India</li>
               <li>📞 +91 98765 43210</li>
               <li>📧 info@forgefitness.com</li>
             </ul>

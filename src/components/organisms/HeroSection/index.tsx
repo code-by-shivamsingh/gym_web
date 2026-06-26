@@ -13,36 +13,52 @@ export default function HeroSection() {
   seconds: 0,
 });
 
-useEffect(() => {
-  const targetDate = new Date("2026-07-01T00:00:00");
+  interface Particle {
+    x: number;
+    duration: number;
+    delay: number;
+  }
+  const [particles, setParticles] = useState<Particle[]>([]);
 
-  const timer = setInterval(() => {
-    const now = new Date();
-    const difference = targetDate.getTime() - now.getTime();
+  useEffect(() => {
+    const generated = [...Array(25)].map(() => ({
+      x: Math.random() * 1500,
+      duration: 6 + Math.random() * 5,
+      delay: Math.random() * 5,
+    }));
+    setParticles(generated);
 
-    if (difference > 0) {
-      setTimeLeft({
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor(
-          (difference / (1000 * 60 * 60)) % 24
-        ),
-        minutes: Math.floor(
-          (difference / (1000 * 60)) % 60
-        ),
-        seconds: Math.floor(
-          (difference / 1000) % 60
-        ),
-      });
-    }
-  }, 1000);
+    const targetDate = new Date("2026-07-01T00:00:00");
 
-  return () => clearInterval(timer);
-}, []);
+    const timer = setInterval(() => {
+      const now = new Date();
+      const difference = targetDate.getTime() - now.getTime();
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor(
+            (difference / (1000 * 60 * 60)) % 24
+          ),
+          minutes: Math.floor(
+            (difference / (1000 * 60)) % 60
+          ),
+          seconds: Math.floor(
+            (difference / 1000) % 60
+          ),
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-<section
-  id="home"
-  className="relative min-h-screen pt-24 overflow-hidden"
->      <div
+    <section
+      id="home"
+      className="relative min-h-screen pt-24 overflow-hidden"
+    >
+      <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage:
@@ -51,37 +67,34 @@ useEffect(() => {
       />
       <div className="absolute top-20 left-20 h-72 w-72 rounded-full bg-yellow-500/20 blur-[150px]" />
 
-<div className="absolute bottom-20 right-20 h-72 w-72 rounded-full bg-orange-500/20 blur-[150px]" />
+      <div className="absolute bottom-20 right-20 h-72 w-72 rounded-full bg-orange-500/20 blur-[150px]" />
 
-      {/* Overlay */}
-     
-
-{/* Golden Particles */}
-<div className="absolute inset-0 overflow-hidden pointer-events-none">
-  {[...Array(25)].map((_, i) => (
-    <motion.div
-      key={i}
-      className="absolute text-yellow-400 text-xl"
-      initial={{
-        y: -100,
-        x: Math.random() * 1500,
-        opacity: 0,
-      }}
-      animate={{
-        y: 1200,
-        opacity: [0, 1, 0],
-        rotate: [0, 360],
-      }}
-      transition={{
-        duration: 6 + Math.random() * 5,
-        repeat: Infinity,
-        delay: Math.random() * 5,
-      }}
-    >
-      ✨
-    </motion.div>
-  ))}
-</div>
+      {/* Golden Particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {particles.map((particle, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-yellow-400 text-xl"
+            initial={{
+              y: -100,
+              x: particle.x,
+              opacity: 0,
+            }}
+            animate={{
+              y: 1200,
+              opacity: [0, 1, 0],
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: particle.duration,
+              repeat: Infinity,
+              delay: particle.delay,
+            }}
+          >
+            ✨
+          </motion.div>
+        ))}
+      </div>
 
       {/* Content */}
     <div className="relative z-10 flex min-h-screen items-center">

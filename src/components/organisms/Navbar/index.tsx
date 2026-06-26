@@ -2,30 +2,31 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const scrollToSection = (id: string) => {
-    const el = document.getElementById(id);
+  const navItems = [
+    { label: "Home", path: "/" },
+    { label: "About Us", path: "/about" },
+    { label: "Services", path: "/services" },
+    { label: "Membership", path: "/membership" },
+    { label: "Features", path: "/features" },
+    { label: "Offers", path: "/offers" },
+    { label: "Training", path: "/training" },
+    { label: "Trainers", path: "/trainers" },
+    { label: "Gallery", path: "/gallery" },
+    { label: "BMI", path: "/bmi" },
+    { label: "FAQ", path: "/faq" },
+    { label: "Contact", path: "/contact" },
+  ];
 
-    if (el) {
-      el.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      setMenuOpen(false);
-    }
-  };
-
-  const handleNavClick = (id: string) => {
-    if (pathname === "/" || pathname === "/home") {
-      scrollToSection(id);
-    } else {
-      router.push(`/#${id}`);
-    }
+  const handleNavClick = (path: string) => {
+    router.push(path);
+    setMenuOpen(false);
   };
 
   return (
@@ -33,28 +34,41 @@ export default function Navbar() {
       <div className="flex justify-between items-center px-6 md:px-10 py-5">
         {/* LOGO */}
         <h1 
-          className="text-2xl font-extrabold tracking-wide cursor-pointer" 
-          onClick={() => handleNavClick("home")}
+          className="text-2xl font-extrabold tracking-wide cursor-pointer select-none" 
+          onClick={() => handleNavClick("/")}
         >
           <span className="text-yellow-400">FORGE</span>
           <span className="text-white">GYM</span>
         </h1>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex gap-8 items-center">
-          <button onClick={() => handleNavClick("home")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">Home</button>
-          <button onClick={() => handleNavClick("about")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">About Us</button>
-          <button onClick={() => handleNavClick("offers")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">Offers</button>
-          <button onClick={() => handleNavClick("features")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">Features</button>
-          <button onClick={() => handleNavClick("gallery")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">Gallery</button>
-          <button onClick={() => handleNavClick("trainers")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">Trainers</button>
-          <button onClick={() => handleNavClick("contact")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">Contact Us</button>
-          <button onClick={() => handleNavClick("training")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">Training</button>
-          <button onClick={() => handleNavClick("bmi")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">BMI</button>
-          <button onClick={() => handleNavClick("faq")} className="hover:text-yellow-400 transition cursor-pointer bg-transparent border-none text-white">FAQ</button>
+        <div className="hidden lg:flex gap-3.5 xl:gap-5 items-center">
+          {navItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <div key={item.path} className="relative py-2 shrink-0">
+                <button
+                  onClick={() => handleNavClick(item.path)}
+                  className={`relative z-10 px-1 py-0.5 text-[13px] xl:text-sm font-semibold transition-colors duration-300 bg-transparent border-none cursor-pointer ${
+                    isActive ? "text-yellow-400 font-bold" : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </button>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNavIndicator"
+                    className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full shadow-[0_0_8px_rgba(250,204,21,0.6)]"
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                  />
+                )}
+              </div>
+            );
+          })}
+          
           <button
             onClick={() => router.push("/login")}
-            className="bg-yellow-400 text-black px-6 py-2 rounded-xl font-bold hover:scale-105 transition cursor-pointer border-none"
+            className="bg-yellow-400 text-black px-4 py-2 rounded-xl font-bold hover:scale-105 transition cursor-pointer border-none text-sm ml-1 shrink-0"
           >
             Login
           </button>
@@ -62,7 +76,7 @@ export default function Navbar() {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-3xl cursor-pointer bg-transparent border-none text-white"
+          className="lg:hidden text-3xl cursor-pointer bg-transparent border-none text-white"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           ☰
@@ -71,23 +85,31 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden flex flex-col gap-4 px-6 pb-6 bg-black border-t border-zinc-800">
-          <button onClick={() => handleNavClick("home")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">Home</button>
-          <button onClick={() => handleNavClick("about")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">About Us</button>
-          <button onClick={() => handleNavClick("offers")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">Offers</button>
-          <button onClick={() => handleNavClick("features")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">Features</button>
-          <button onClick={() => handleNavClick("gallery")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">Gallery</button>
-          <button onClick={() => handleNavClick("trainers")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">Trainers</button>
-          <button onClick={() => handleNavClick("contact")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">Contact Us</button>
-          <button onClick={() => handleNavClick("training")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">Training</button>
-          <button onClick={() => handleNavClick("bmi")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">BMI</button>
-          <button onClick={() => handleNavClick("faq")} className="text-left py-1 hover:text-yellow-400 bg-transparent border-none text-white cursor-pointer">FAQ</button>
+        <div className="lg:hidden flex flex-col gap-2 px-6 pb-6 bg-black border-t border-zinc-800 animate-slideDown max-h-[80vh] overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavClick(item.path)}
+                className={`text-left py-2.5 px-4 rounded-xl font-bold transition-all duration-300 cursor-pointer border-none flex items-center justify-between ${
+                  isActive
+                    ? "bg-yellow-400/10 text-yellow-400 border-l-4 border-yellow-400"
+                    : "bg-transparent text-gray-400 hover:bg-zinc-900 hover:text-white"
+                }`}
+              >
+                <span>{item.label}</span>
+                {isActive && <span className="text-yellow-400 text-xs">●</span>}
+              </button>
+            );
+          })}
+          
           <button
             onClick={() => {
               setMenuOpen(false);
               router.push("/login");
             }}
-            className="bg-yellow-400 text-black py-2 rounded-xl font-bold text-center border-none cursor-pointer"
+            className="bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-center border-none cursor-pointer mt-2 text-sm"
           >
             Login
           </button>

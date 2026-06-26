@@ -1,9 +1,13 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Member = require('../models/Member');
 const config = require('../config/config');
 const { createNotificationHelper } = require('./notificationController');
+const sendEmail = require('../utils/sendEmail');
+const OtpService = require('../services/otpService');
+
 
 // Helper to generate token
 const generateToken = (id) => {
@@ -123,25 +127,65 @@ const logout = async (req, res) => {
   res.status(200).json({ success: true, message: 'Logout successful' });
 };
 
-// @desc    Forgot Password
+// @desc    Forgot Password (Send OTP)
 // @route   POST /api/auth/forgot-password
 // @access  Public
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide an email' });
     }
 
-    // Mock reset token flow
-    res.status(200).json({
+    const genericResponse = {
       success: true,
-      message: 'Password reset link sent to email (Mocked)'
-    });
+      message: 'If the email is registered, a secure 6-digit OTP has been sent. Please check your inbox.'
+    };
+
+    try {
+      await OtpService.generateAndSendOtp(email);
+    } catch (err) {
+      if (err.statusCode === 429) {
+        return res.status(429).json({ success: false, message: err.message });
+      }
+      console.error("[OTP DISPATCH ERROR]", err);
+      return res.status(500).json({ success: false, message: 'Server Error' });
+    }
+
+    return res.status(200).json(genericResponse);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// @desc    Verify OTP
+// @route   POST /api/auth/verify-otp
+// @access  Public
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Please provide email and OTP' });
+    }
+
+    try {
+      const resetToken = await OtpService.verifyOtp(email, otp);
+      return res.status(200).json({
+        success: true,
+        message: 'OTP verified successfully',
+        token: resetToken
+      });
+    } catch (err) {
+      return res.status(err.statusCode || 400).json({
+        success: false,
+        message: err.message || 'Verification failed'
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
@@ -151,18 +195,39 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { password, token } = req.body;
-    // Mock verify token flow (simply changing first user password for demo/mock)
-    if (!password) {
-      return res.status(400).json({ success: false, message: 'Please provide a password' });
+
+    if (!password || !token) {
+      return res.status(400).json({ success: false, message: 'Please provide new password and verification token' });
     }
 
-    res.status(200).json({
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired password reset token' });
+    }
+
+    // Reset password (triggers User Schema pre-save bcrypt hash)
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    return res.status(200).json({
       success: true,
-      message: 'Password reset successfully (Mocked)'
+      message: 'Password reset successfully'
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
@@ -194,6 +259,8 @@ module.exports = {
   login,
   logout,
   forgotPassword,
+  verifyOtp,
   resetPassword,
   changePassword
 };
+
