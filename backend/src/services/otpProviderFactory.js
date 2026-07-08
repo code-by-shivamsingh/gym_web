@@ -1,6 +1,7 @@
 const EmailOtpProvider = require('./emailOtpProvider');
 const SmsOtpProvider = require('./smsOtpProvider');
 const WhatsAppOtpProvider = require('./whatsappOtpProvider');
+const config = require('../config/config');
 
 /**
  * Factory class to instantiate the configured OTP dispatch provider.
@@ -12,7 +13,7 @@ class OtpProviderFactory {
    * @returns {BaseOtpProvider} The matching provider instance
    */
   static getProvider(type) {
-    const providerType = (type || process.env.OTP_PROVIDER || 'email').toLowerCase();
+    const providerType = (type || config.OTP_PROVIDER || 'email').toLowerCase();
     switch (providerType) {
       case 'email':
         return new EmailOtpProvider();

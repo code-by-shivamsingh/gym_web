@@ -25,6 +25,11 @@ const SettingsSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: 18
+  },
+  upiId: {
+    type: String,
+    required: true,
+    default: '7610425720@ybl'
   }
 }, {
   timestamps: true

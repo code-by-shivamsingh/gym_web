@@ -1,40 +1,15 @@
 {
-  "name": "gym-website",
-  "version": "0.1.0",
+  "name": "gym-management-monorepo",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "frontend": "next dev --webpack",
+    "frontend": "npm run dev --prefix frontend",
     "backend": "npm run dev --prefix backend",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "build": "npm run build --prefix frontend",
+    "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend"
   },
   "dependencies": {
-    "@mui/icons-material": "^9.1.1",
-    "@mui/lab": "^9.0.0-beta.5",
-    "@mui/material": "^9.0.1",
-    "@reduxjs/toolkit": "^2.12.0",
-    "@types/uuid": "^10.0.0",
-    "axios": "^1.18.0",
-    "concurrently": "^10.0.3",
-    "formik": "^2.4.9",
-    "framer-motion": "^12.40.0",
-    "next": "16.2.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-redux": "^9.3.0",
-    "uuid": "^14.0.0",
-    "yup": "^1.7.1"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "concurrently": "^10.0.3"
   }
 }

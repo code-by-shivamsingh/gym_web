@@ -29,8 +29,8 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    // Create user
-    const userRole = role || 'Member';
+    // Force role to Member on public registration to prevent privilege escalation
+    const userRole = 'Member';
     const user = await User.create({
       name,
       email,
@@ -47,7 +47,8 @@ const register = async (req, res) => {
         email,
         mobile: mobile || '',
         plan: req.body.plan || 'Basic',
-        status: 'Active'
+        status: 'Expired',
+        expiryDate: null
       });
     }
 
@@ -149,7 +150,16 @@ const forgotPassword = async (req, res) => {
         return res.status(429).json({ success: false, message: err.message });
       }
       console.error("[OTP DISPATCH ERROR]", err);
-      return res.status(500).json({ success: false, message: 'Server Error' });
+      
+      // Check if SMTP configuration or network issue occurred
+      if (err.code === 'EAUTH' || err.responseCode === 535 || err.message.includes('auth') || err.message.includes('SMTP')) {
+        return res.status(500).json({
+          success: false,
+          message: 'Mail delivery authentication failed. Check server SMTP credentials.'
+        });
+      }
+      
+      return res.status(500).json({ success: false, message: err.message || 'Server Error' });
     }
 
     return res.status(200).json(genericResponse);

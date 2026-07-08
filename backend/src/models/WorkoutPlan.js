@@ -34,4 +34,6 @@ const WorkoutPlanSchema = new mongoose.Schema({
   timestamps: true
 });
 
+WorkoutPlanSchema.index({ user: 1 });
+
 module.exports = mongoose.model('WorkoutPlan', WorkoutPlanSchema);

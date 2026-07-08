@@ -1,0 +1,3 @@
+--- DATABASE SEEDED USERS ---
+Email: admin@gmail.com, Role: Admin, PasswordHash: $2a$10$/Ty0LwFNsKWOA9VvaaJBf.XBZeSOMBk9DAcuZAGJYNtm6eR6dJ6SO
+Email: member@gmail.com, Role: Member, PasswordHash: $2a$10$KRONEXXR4u4WnZxcgtHRZu9j.3bniXL4n28K456xMJuHDwDXcoMBq

@@ -10,8 +10,24 @@
  * If credentials are missing, OTP is printed to the backend terminal (dev fallback).
  */
 
+const config = require('../config/config');
+
+/**
+ * Dispatches an email containing the security OTP.
+ * Catches configuration gaps and network timeouts, and raises failures so callers can react.
+ * 
+ * @param {Object} payload - Email parameters
+ * @param {string} payload.to - Recipient email address
+ * @param {string} payload.subject - Email subject line
+ * @param {string} payload.otp - 6-digit plain OTP code
+ */
 const sendEmail = async ({ to, subject, otp }) => {
-  // ── HTML Email Template ─────────────────────────────────────────────────────
+  const timestamp = new Date().toISOString();
+  console.log(`\n[EMAIL SERVICE] 📨 Received dispatch request at ${timestamp}`);
+  console.log(`[EMAIL SERVICE]    Recipient: ${to}`);
+  console.log(`[EMAIL SERVICE]    Subject:   ${subject}`);
+
+  // ── HTML Email Template (Forge Gym Branded & Responsive) ─────────────────────
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -96,7 +112,7 @@ const sendEmail = async ({ to, subject, otp }) => {
           <div class="otp-container">
             <div class="otp-label">Your Verification Code</div>
             <div class="otp-code">${otp}</div>
-            <div class="expiry-badge">⏱ Valid for 59 seconds</div>
+            <div class="expiry-badge">⏱ Valid for 10 minutes</div>
           </div>
 
           <p>
@@ -121,95 +137,140 @@ const sendEmail = async ({ to, subject, otp }) => {
     </html>
   `;
 
-  // ── Always log to terminal (dev reference) ──────────────────────────────────
+  // ── Always log plain text fallback to backend terminal (development aid) ──────
   console.log('\n' + '─'.repeat(55));
-  console.log('[OTP DISPATCH]');
+  console.log('[OTP DISPATCH TERMINAL LOG]');
   console.log(`  To:   ${to}`);
-  console.log(`  OTP:  \x1b[33m\x1b[1m${otp}\x1b[0m  (valid 59 seconds)`);
-  console.log('─'.repeat(55));
+  console.log(`  OTP:  \x1b[33m\x1b[1m${otp}\x1b[0m  (valid 10 minutes)`);
+  console.log('─'.repeat(55) + '\n');
 
-  // ── Check for SMTP credentials ──────────────────────────────────────────────
-  const smtpUser = (process.env.SMTP_USER || '').trim();
-  const smtpPass = (process.env.SMTP_PASS || '').trim();
-  const smtpService = (process.env.SMTP_SERVICE || '').trim();
-  const smtpHost = (process.env.SMTP_HOST || '').trim();
+  // ── Validate SMTP config variables ──────────────────────────────────────────
+  const smtpUser = (config.SMTP_USER || '').trim();
+  const smtpPass = (config.SMTP_PASS || '').trim();
+  const smtpService = (config.SMTP_SERVICE || '').trim();
+  const smtpHost = (config.SMTP_HOST || '').trim();
 
   const hasSmtpConfig = smtpUser && smtpPass && (smtpService || smtpHost);
 
   if (!hasSmtpConfig) {
-    console.log('[EMAIL] ⚠️  No SMTP credentials set in .env → using terminal fallback only.');
-    console.log('[EMAIL]    Set SMTP_SERVICE, SMTP_USER, SMTP_PASS in .env to enable Gmail delivery.\n');
+    console.warn('[EMAIL SERVICE] ⚠️ Missing SMTP configuration in .env. Falling back to terminal log only.');
     return;
   }
 
-  // ── Build nodemailer transporter ────────────────────────────────────────────
+  // Load nodemailer
   let nodemailer;
   try {
     nodemailer = require('nodemailer');
   } catch (err) {
-    console.error('[EMAIL] ❌ nodemailer module not found! Run: npm install nodemailer --prefix backend\n');
-    return;
+    console.error('[EMAIL SERVICE] ❌ nodemailer module not found! Run: npm install nodemailer');
+    throw new Error('Nodemailer module is not installed.');
   }
 
+  // Clean spaces from Gmail App Password (Google generates passwords like 'xxxx xxxx xxxx xxxx')
+  const cleanPass = smtpPass.replace(/\s+/g, '');
+
+  // ── Transporter Setup (Supporting service-based and host-based connections) ──
   const transportConfig = {
     auth: {
       user: smtpUser,
-      pass: smtpPass,
+      pass: cleanPass,
     },
+    // Enforce TLS connection settings
     tls: {
-      rejectUnauthorized: false,  // Allow self-signed certs in dev
+      rejectUnauthorized: false,
     },
+    connectionTimeout: 10000, // 10 seconds timeout
+    greetingTimeout: 5000,
+    socketTimeout: 15000
   };
 
-  if (smtpService) {
-    // Use shorthand service name (e.g. "gmail" → auto-configures host/port/security)
+  // Gmail special default settings for highest delivery reliability
+  if (smtpService.toLowerCase() === 'gmail') {
+    transportConfig.host = 'smtp.gmail.com';
+    transportConfig.port = 465;
+    transportConfig.secure = true; // Use SSL on port 465
+  } else if (smtpService) {
     transportConfig.service = smtpService;
   } else {
-    // Manual host configuration
-    const port = parseInt(process.env.SMTP_PORT || '587', 10);
+    const port = parseInt(config.SMTP_PORT || '587', 10);
     transportConfig.host = smtpHost;
     transportConfig.port = port;
-    transportConfig.secure = port === 465;  // true for SSL, false for STARTTLS
+    transportConfig.secure = port === 465;
   }
+
+  console.log(`[EMAIL SERVICE] ⚙️ Building SMTP transporter:`);
+  console.log(`  Host:   ${transportConfig.host || 'Service: ' + transportConfig.service}`);
+  console.log(`  Port:   ${transportConfig.port || 'default'}`);
+  console.log(`  Secure: ${transportConfig.secure || 'false'}`);
+  console.log(`  User:   ${smtpUser}`);
 
   const transporter = nodemailer.createTransport(transportConfig);
 
-  try {
-    // Verify SMTP connection before sending
-    await transporter.verify();
-    console.log('[EMAIL] ✅ SMTP connection verified.');
+  let attempts = 0;
+  const maxAttempts = 3;
+  let sent = false;
+  let lastError = null;
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Forge Gym Security" <${smtpUser}>`,
-      to,
-      subject,
-      html: htmlContent,
-    });
+  while (attempts < maxAttempts && !sent) {
+    try {
+      attempts++;
+      console.log(`[EMAIL SERVICE] ⏳ Dispatching mail (Attempt ${attempts}/${maxAttempts})...`);
+      
+      // Perform SMTP connection handshake check on the first attempt
+      if (attempts === 1) {
+        console.log('[EMAIL SERVICE] 🔌 Verifying SMTP connection handshake...');
+        await transporter.verify();
+        console.log('[EMAIL SERVICE] ✅ SMTP connection verified successfully.');
+      }
 
-    console.log(`[EMAIL] ✅ OTP email successfully delivered to ${to}\n`);
-  } catch (err) {
-    console.error('[EMAIL] ❌ SMTP send failed:');
-    console.error('  Code:', err.code);
-    console.error('  Message:', err.message);
+      const mailOptions = {
+        from: config.SMTP_FROM || `"Forge Gym Security" <${smtpUser}>`,
+        to,
+        subject,
+        html: htmlContent,
+      };
 
-    // Specific Gmail error guidance
-    if (err.code === 'EAUTH') {
-      console.error('\n[EMAIL FIX] Gmail auth failed. Check these:');
-      console.error('  1. SMTP_USER must be your full Gmail address (e.g. you@gmail.com)');
-      console.error('  2. SMTP_PASS must be an App Password (NOT your Gmail login password)');
-      console.error('  3. Generate one at: https://myaccount.google.com/apppasswords');
-      console.error('  4. 2-Factor Authentication must be ENABLED on your Gmail account\n');
-    } else if (err.code === 'ECONNECTION' || err.code === 'ETIMEDOUT') {
-      console.error('\n[EMAIL FIX] Connection error. Check:');
-      console.error('  1. SMTP_SERVICE=gmail is set correctly');
-      console.error('  2. Your firewall/antivirus is not blocking port 587\n');
-    } else if (err.responseCode === 535) {
-      console.error('\n[EMAIL FIX] Username/Password incorrect. Use a Gmail App Password:\n');
-      console.error('  https://myaccount.google.com/apppasswords\n');
+      const info = await transporter.sendMail(mailOptions);
+
+      // Detailed delivery logging
+      console.log(`[EMAIL SERVICE] ✅ OTP email successfully delivered!`);
+      console.log(`  Message ID:   ${info.messageId}`);
+      console.log(`  Response:     ${info.response}`);
+      console.log(`  Accepted:     ${JSON.stringify(info.accepted)}`);
+      console.log(`  Rejected:     ${JSON.stringify(info.rejected)}`);
+      console.log(`  Envelope:     ${JSON.stringify(info.envelope)}`);
+      
+      sent = true;
+    } catch (err) {
+      lastError = err;
+      console.error(`[EMAIL SERVICE] ❌ Attempt ${attempts} failed: ${err.message}`);
+      if (err.stack) {
+        console.error(`[EMAIL SERVICE] 📋 Stack Trace:\n${err.stack}`);
+      }
+
+      if (attempts >= maxAttempts) {
+        console.error('[EMAIL SERVICE] 🚨 All mail delivery attempts failed.');
+        
+        // Output detailed diagnosis information
+        if (err.code === 'EAUTH' || err.responseCode === 535) {
+          console.error('\n======================================================');
+          console.error('❌ GMAIL AUTHENTICATION DIAGNOSIS FAILED (535)');
+          console.error('======================================================');
+          console.error(`1. Check if SMTP_USER (${smtpUser}) is spelling correct.`);
+          console.error(`2. Confirm SMTP_PASS is a 16-character App Password (not standard login password).`);
+          console.error(`3. Confirm 2-Step Verification is active on that Google account.`);
+          console.error(`4. Generate new App Password at: https://myaccount.google.com/apppasswords`);
+          console.error('======================================================\n');
+        }
+        
+        // Critical fix: Throw the error so it propagates to authController and API returns 500
+        throw err;
+      } else {
+        const retryDelay = 2000;
+        console.log(`[EMAIL SERVICE] ⏳ Waiting ${retryDelay / 1000} seconds before retry...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
     }
-
-    // Do NOT throw — OTP is already printed to terminal as fallback
-    console.log('[EMAIL] ⚠️  Email failed but OTP was logged to terminal above.\n');
   }
 };
 

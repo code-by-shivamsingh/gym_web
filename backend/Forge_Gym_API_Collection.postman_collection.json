@@ -1,0 +1,430 @@
+{
+	"info": {
+		"_postman_id": "8bbbf26d-4ee8-4c17-a0de-444a6ea860da",
+		"name": "Forge Gym Authentication & Security API",
+		"description": "Enterprise-ready Postman collection for testing the Forge Gym MERN application endpoints: Register, Login, Forgot Password (Send OTP), Verify OTP, Reset Password, and Change Password.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth - Register",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Shivam Sikarwar\",\n    \"email\": \"shivamsikarwar7610@gmail.com\",\n    \"mobile\": \"7610123456\",\n    \"password\": \"password123\",\n    \"role\": \"Member\",\n    \"plan\": \"Basic\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/register",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				},
+				"description": "Registers a new Member in the Forge Gym database. This automatically triggers a welcome notification."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.success && response.token) {",
+							"    pm.environment.set(\"token\", response.token);",
+							"    console.log(\"Saved login JWT token to environment variables\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"shivamsikarwar7610@gmail.com\",\n    \"password\": \"password123\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"description": "Logins a user using registered credentials. The test script automatically stores the returned JWT token to test authorized requests."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Forgot Password (Send OTP)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"shivamsikarwar7610@gmail.com\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/forgot-password",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"forgot-password"
+					]
+				},
+				"description": "Triggers the OTP service. Generates a secure, 6-digit One-Time Password, hashes it in MongoDB, and dispatches an HTML email to the client inbox."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Verify OTP",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.success && response.token) {",
+							"    pm.environment.set(\"reset_token\", response.token);",
+							"    console.log(\"Saved verification reset_token to environment variables\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"shivamsikarwar7610@gmail.com\",\n    \"otp\": \"123456\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/verify-otp",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"verify-otp"
+					]
+				},
+				"description": "Verifies the 6-digit code received via email. If successful, returns a temporary one-time password reset token which is automatically saved to environment variables."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Reset Password",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"password\": \"new_secure_password123\",\n    \"token\": \"{{reset_token}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/reset-password",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"reset-password"
+					]
+				},
+				"description": "Applies a password reset update. Requires the temporary reset token obtained from the Verify OTP endpoint."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Change Password (Authorized)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"currentPassword\": \"password123\",\n    \"newPassword\": \"new_secure_password123\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/change-password",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"change-password"
+					]
+				},
+				"description": "Changes the password of a logged-in user. Requires JWT authorization bearer token."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Logout",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/auth/logout",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"logout"
+					]
+				},
+				"description": "Logs the current user session out."
+			},
+			"response": []
+		},
+		{
+			"name": "Payment - Create Order",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.success && response.data) {",
+							"    pm.environment.set(\"order_id\", response.data._id);",
+							"    console.log(\"Saved created payment order_id to environment variables\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 1999,\n    \"method\": \"Credit/Debit Card\",\n    \"plan\": \"Premium\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/payments/create-order",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"payments",
+						"create-order"
+					]
+				},
+				"description": "Initializes a billing request on the server, producing a Pending payment record."
+			},
+			"response": []
+		},
+		{
+			"name": "Payment - Mock Charge Simulator",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.success && response.data) {",
+							"    pm.environment.set(\"payment_signature\", response.data.signature);",
+							"    pm.environment.set(\"payment_txn_id\", response.data.transactionId);",
+							"    pm.environment.set(\"payment_status\", response.data.status);",
+							"    console.log(\"Saved signature and transaction details to environment variables\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"orderId\": \"{{order_id}}\",\n    \"action\": \"SUCCEED\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/payments/process-mock-charge",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"payments",
+						"process-mock-charge"
+					]
+				},
+				"description": "Simulates payment gateway charge capture. Outcome choices: SUCCEED, FAIL, CANCEL. Generates the necessary cryptographic verification signature."
+			},
+			"response": []
+		},
+		{
+			"name": "Payment - Secure Verify Signature",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"orderId\": \"{{order_id}}\",\n    \"transactionId\": \"{{payment_txn_id}}\",\n    \"status\": \"{{payment_status}}\",\n    \"signature\": \"{{payment_signature}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/payments/verify",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"payments",
+						"verify"
+					]
+				},
+				"description": "Verifies the cryptographic HMAC signature associated with the transaction, updating user status and dispatching receipts if successfully completed."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:5000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "reset_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

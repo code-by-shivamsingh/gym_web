@@ -23,12 +23,12 @@ const MemberSchema = new mongoose.Schema({
   plan: {
     type: String,
     default: 'Basic',
-    enum: ['Basic', 'Premium', 'Elite']
+    enum: ['Basic', 'Silver', 'Gold', 'Premium']
   },
   status: {
     type: String,
     enum: ['Active', 'Expired'],
-    default: 'Active'
+    default: 'Expired'
   },
   joinedDate: {
     type: Date,
@@ -36,7 +36,7 @@ const MemberSchema = new mongoose.Schema({
   },
   expiryDate: {
     type: Date,
-    default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default to 30 days
+    default: null
   },
   trainer: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,5 +46,8 @@ const MemberSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+MemberSchema.index({ user: 1 });
+MemberSchema.index({ trainer: 1 });
 
 module.exports = mongoose.model('Member', MemberSchema);

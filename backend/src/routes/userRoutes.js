@@ -30,7 +30,7 @@ const fileFilter = (req, file, cb) => {
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = file.mimetype.startsWith('image/');
 
-  if (extname || mimetype) {
+  if (extname && mimetype) {
     return cb(null, true);
   }
   cb(new Error('Only image files (jpeg/jpg/png/webp) are allowed!'));

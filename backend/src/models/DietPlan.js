@@ -30,4 +30,6 @@ const DietPlanSchema = new mongoose.Schema({
   timestamps: true
 });
 
+DietPlanSchema.index({ user: 1 });
+
 module.exports = mongoose.model('DietPlan', DietPlanSchema);
