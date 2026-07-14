@@ -35,6 +35,17 @@ export default function RegisterScreen({ navigation, route }: any) {
       return;
     }
 
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Error", "Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters long.");
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await registerUser({

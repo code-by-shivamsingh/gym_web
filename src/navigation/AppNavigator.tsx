@@ -12,6 +12,8 @@ import { useTheme } from "../utils/ThemeContext";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setUserProfile } from "../store/slices/userDetailsSlice";
 import { getUserProfile, logoutUser } from "../services/api";
+import { startLocationTracking, stopLocationTracking } from "../services/BackgroundLocationService";
+import { initNetworkSyncListener, stopNetworkSyncListener } from "../services/OfflineSyncService";
 
 // Import Screens (Placeholder imports - screens are built in src/screens)
 import OnboardingScreen from "../screens/auth/OnboardingScreen";
@@ -212,7 +214,7 @@ const MemberDrawerNavigator = () => {
         options={{
           title: "Forge Gym Portal",
           drawerLabel: "Home Dashboard",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="home" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="home" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -220,7 +222,7 @@ const MemberDrawerNavigator = () => {
         component={MemberProfileScreen}
         options={{
           title: "My Profile",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="person" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="account" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -228,7 +230,7 @@ const MemberDrawerNavigator = () => {
         component={MemberAttendanceScreen}
         options={{
           title: "Attendance Log",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="date-range" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="calendar-check" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -236,7 +238,7 @@ const MemberDrawerNavigator = () => {
         component={MemberWorkoutPlanScreen}
         options={{
           title: "Workout Schedule",
-          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="run" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="dumbbell" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -252,7 +254,7 @@ const MemberDrawerNavigator = () => {
         component={MemberPaymentsScreen}
         options={{
           title: "Billing & Invoices",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="receipt-long" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="receipt" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -260,7 +262,7 @@ const MemberDrawerNavigator = () => {
         component={MemberNotificationsScreen}
         options={{
           title: "Inbox Notifications",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="notifications" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="bell" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -268,7 +270,7 @@ const MemberDrawerNavigator = () => {
         component={MemberProgressScreen}
         options={{
           title: "Body Progress Tracker",
-          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="chart-bell-curve-cumulative" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="chart-line" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -276,7 +278,7 @@ const MemberDrawerNavigator = () => {
         component={AboutScreen}
         options={{
           title: "About Forge Gym",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="info" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="information" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -284,7 +286,7 @@ const MemberDrawerNavigator = () => {
         component={FeaturesScreen}
         options={{
           title: "Features & Amenities",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="star" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="star" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -292,7 +294,7 @@ const MemberDrawerNavigator = () => {
         component={ContactScreen}
         options={{
           title: "Contact & Support",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="contact-support" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="headset" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -300,7 +302,7 @@ const MemberDrawerNavigator = () => {
         component={TrainingScreen}
         options={{
           title: "Training Tracks",
-          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="weight-lifter" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="run" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -308,7 +310,7 @@ const MemberDrawerNavigator = () => {
         component={OffersScreen}
         options={{
           title: "Promotions & Offers",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="local-offer" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="tag" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -316,7 +318,7 @@ const MemberDrawerNavigator = () => {
         component={FaqScreen}
         options={{
           title: "Frequently Asked Questions",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="help-outline" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="help-circle" color={color} size={size} />,
         }}
       />
       <Drawer.Screen
@@ -324,7 +326,7 @@ const MemberDrawerNavigator = () => {
         component={ServicesScreen}
         options={{
           title: "Core Services",
-          drawerIcon: ({ color, size }) => <MaterialIcons name="design-services" color={color} size={size} />,
+          drawerIcon: ({ color, size }) => <MaterialCommunityIcons name="handshake" color={color} size={size} />,
         }}
       />
     </Drawer.Navigator>
@@ -461,6 +463,18 @@ export const AppNavigator = () => {
     };
     bootstrapApp();
   }, []);
+
+  useEffect(() => {
+    if (userProfile && userProfile.role === "Member") {
+      console.log("[AppNavigator] Member logged in. Starting background location tracking and sync listeners...");
+      startLocationTracking();
+      initNetworkSyncListener();
+    } else {
+      console.log("[AppNavigator] Member logged out or profile empty. Stopping background location tracking and cleaning up sync listeners...");
+      stopLocationTracking();
+      stopNetworkSyncListener();
+    }
+  }, [userProfile]);
 
   if (loading) {
     return (

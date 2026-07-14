@@ -54,7 +54,7 @@ export default function ServicesScreen({ navigation }: any) {
 
         {/* Call to Action */}
         <TouchableOpacity
-          onPress={() => navigation.navigate("Membership")}
+          onPress={() => navigation.navigate("MainPortal", { screen: "MembershipTab" })}
           style={[styles.ctaCard, { backgroundColor: colors.primary }]}
         >
           <Text style={styles.ctaHeading}>Elevate Your Fitness Level</Text>

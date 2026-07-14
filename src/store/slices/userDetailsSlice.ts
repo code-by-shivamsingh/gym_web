@@ -36,6 +36,9 @@ const userDetailsSlice = createSlice({
   initialState,
   reducers: {
     setUserProfile: (state, action: PayloadAction<UserProfile | null>) => {
+      if (JSON.stringify(state.userProfile) === JSON.stringify(action.payload)) {
+        return; // Skip update if profile is identical to prevent re-render cascading
+      }
       state.userProfile = action.payload;
     },
     setFirebaseId: (state, action: PayloadAction<string | null>) => {

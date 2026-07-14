@@ -8,8 +8,24 @@ import { store } from "./src/store/store";
 import { ThemeProvider, useTheme } from "./src/utils/ThemeContext";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 
+import { initPushNotifications } from "./src/services/NotificationHandler";
+
 const MainApp = () => {
   const { theme } = useTheme();
+
+  React.useEffect(() => {
+    let fcmUnsubscribe: any;
+    initPushNotifications().then((res) => {
+      if (res && res.unsubscribe) {
+        fcmUnsubscribe = res.unsubscribe;
+      }
+    });
+    return () => {
+      if (fcmUnsubscribe) {
+        fcmUnsubscribe();
+      }
+    };
+  }, []);
 
   return (
     <>

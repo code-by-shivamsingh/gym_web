@@ -11,9 +11,11 @@ const config = {
     blockList: [
       /.*\.gradle.*/,
       /.*android\/app\/build.*/,
-      /.*ios\/build.*/
+      /.*ios\/build.*/,
+      /.*@react-native\/gradle-plugin.*/
     ]
   }
 };
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+

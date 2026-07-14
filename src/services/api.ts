@@ -6,11 +6,11 @@ import * as Keychain from "react-native-keychain";
 // Change PHYSICAL_DEVICE_IP to your machine's local IP address if testing on a physical device.
 const PHYSICAL_DEVICE_IP = "192.168.1.52";
 // Set this to true if you are testing on a physical device in development
-const USE_PHYSICAL_DEVICE_IN_DEV = false;
+const USE_PHYSICAL_DEVICE_IN_DEV = true;
 
 export const BASE_URL = Platform.select({
-  android: __DEV__ && !USE_PHYSICAL_DEVICE_IN_DEV ? "http://10.0.2.2:5000" : `http://${PHYSICAL_DEVICE_IP}:5000`,
-  ios: __DEV__ && !USE_PHYSICAL_DEVICE_IN_DEV ? "http://localhost:5000" : `http://${PHYSICAL_DEVICE_IP}:5000`,
+  android: __DEV__ ? "http://localhost:5000" : `http://${PHYSICAL_DEVICE_IP}:5000`,
+  ios: __DEV__ ? "http://localhost:5000" : `http://${PHYSICAL_DEVICE_IP}:5000`,
   default: `http://${PHYSICAL_DEVICE_IP}:5000`,
 });
 
@@ -122,6 +122,7 @@ export const loginUser = async (params: LoginParams) => {
       data: response.data.data,
     };
   } catch (error: any) {
+    console.error("Login Error:", error.response?.data || error.message);
     return {
       success: false,
       message: error.response?.data?.message || "Login failed",
@@ -145,6 +146,7 @@ export const registerUser = async (params: RegisterParams) => {
       data: response.data.data,
     };
   } catch (error: any) {
+    console.error("Register Error:", error.response?.data || error.message);
     return {
       success: false,
       message: error.response?.data?.message || "Registration failed",
@@ -527,3 +529,141 @@ export const getUserNotifications = async () => {
     return { success: false, data: [] };
   }
 };
+
+// Location logging API
+export const logLocationTelemetry = async (latitude: number, longitude: number, accuracy = 0, deviceType = "mobile") => {
+  try {
+    const response = await axiosClient.post("/users/location", { latitude, longitude, deviceType, accuracy });
+    return { success: true, data: response.data.data, message: response.data.message };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Location logging failed" };
+  }
+};
+
+// Recommended Today's Workout API (Compatibility wrapper on top of new progression structure)
+export const getTodayRecommendedWorkout = async () => {
+  try {
+    const response = await axiosClient.get("/workouts/progress");
+    const progressRes = response.data.data;
+    const currentDay = progressRes ? progressRes.currentDay : 1;
+    
+    // Fetch detailed day
+    const dayResponse = await axiosClient.get(`/workouts/day/${currentDay}`);
+    return {
+      success: true,
+      data: {
+        day: `Day ${currentDay}`,
+        dayName: dayResponse.data.data.dayName || '',
+        description: dayResponse.data.data.description || '',
+        isBeginner: true,
+        workout: dayResponse.data.data.exercises.map((ex: any) => ({
+          _id: ex._id,
+          title: ex.name,
+          category: ex.targetMuscles[0] || 'Strength',
+          muscleGroup: ex.targetMuscles.join(', '),
+          duration: Math.round(ex.duration / 60),
+          caloriesBurn: ex.calories,
+          thumbnail: ex.thumbnailUrl || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500&auto=format&fit=crop&q=60',
+          videoUrl: ex.videoUrl,
+          description: ex.description,
+          completed: progressRes ? progressRes.completedExercises.includes(ex._id) : false
+        }))
+      }
+    };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to load recommended workouts" };
+  }
+};
+
+// Complete Workout Video progress API (Compatibility wrapper on top of new progression structure)
+export const completeWorkoutVideo = async (workoutVideoId: string) => {
+  try {
+    const progressResponse = await axiosClient.get("/workouts/progress");
+    const progress = progressResponse.data.data;
+    if (!progress) throw new Error("Progress context missing");
+
+    const response = await axiosClient.post("/workouts/complete-exercise", {
+      programId: progress.programId,
+      dayNumber: progress.currentDay,
+      exerciseId: workoutVideoId
+    });
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to complete workout" };
+  }
+};
+
+// New Structured Progression APIs
+export const getWorkoutProgram = async () => {
+  try {
+    const response = await axiosClient.get("/workouts/program");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null };
+  }
+};
+
+export const getWorkoutDay = async (dayNumber: number) => {
+  try {
+    const response = await axiosClient.get(`/workouts/day/${dayNumber}`);
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null };
+  }
+};
+
+export const getWorkoutProgress = async () => {
+  try {
+    const response = await axiosClient.get("/workouts/progress");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null };
+  }
+};
+
+export const startWorkoutProgram = async () => {
+  try {
+    const response = await axiosClient.post("/workouts/start");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null };
+  }
+};
+
+export const completeExercise = async (programId: string, dayNumber: number, exerciseId: string) => {
+  try {
+    const response = await axiosClient.post("/workouts/complete-exercise", { programId, dayNumber, exerciseId });
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to complete exercise" };
+  }
+};
+
+export const completeWorkoutDay = async (programId: string, dayNumber: number, caloriesBurned: number, timeSpent: number) => {
+  try {
+    const response = await axiosClient.post("/workouts/complete-day", { programId, dayNumber, caloriesBurned, timeSpent });
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to complete day" };
+  }
+};
+
+export const getWorkoutHistory = async () => {
+  try {
+    const response = await axiosClient.get("/workouts/history");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
+};
+
+// Current check-in geofence status API
+export const getCurrentAttendanceStatus = async () => {
+  try {
+    const response = await axiosClient.get("/attendance/current-status");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Failed to fetch status" };
+  }
+};
+

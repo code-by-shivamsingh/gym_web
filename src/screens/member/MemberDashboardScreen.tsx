@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Platform, PermissionsAndroid } from "react-native";
+import Geolocation from "react-native-geolocation-service";
 import { useTheme } from "../../utils/ThemeContext";
 import { useAppSelector, useAppDispatch } from "../../store/hooks";
-import { getUserProfile, getDashboardStats, getWorkoutPlans, checkInAttendance, checkOutAttendance } from "../../services/api";
+import { 
+  getUserProfile, 
+  getDashboardStats, 
+  getTodayRecommendedWorkout, 
+  logLocationTelemetry, 
+  getCurrentAttendanceStatus 
+} from "../../services/api";
 import { setUserProfile } from "../../store/slices/userDetailsSlice";
 import { setActiveSession } from "../../store/slices/attendanceSlice";
 
@@ -15,15 +22,85 @@ export default function MemberDashboardScreen({ navigation }: any) {
 
   const [stats, setStats] = useState<any>(null);
   const [workout, setWorkout] = useState<any>(null);
+  const [telemetry, setTelemetry] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchTelemetry = async () => {
+    try {
+      console.log("[Dashboard GPS] Initiating foreground location check...");
+      if (Platform.OS === "android") {
+        let hasFineLocation = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        );
+        if (!hasFineLocation) {
+          console.log("[Dashboard GPS] Foreground ACCESS_FINE_LOCATION not granted. Requesting permission...");
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: "ForgeGym Location Access Permission",
+              message: "ForgeGym needs access to your GPS coordinate to log automated check-in details when arriving at the gym.",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK",
+            }
+          );
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            console.warn("[Dashboard GPS] Foreground location permission denied by user. Skipping telemetry sync.");
+            return;
+          }
+          hasFineLocation = true;
+        }
+      }
+
+      Geolocation.getCurrentPosition(
+        async (position) => {
+          if (!position || !position.coords) {
+            console.warn("[Dashboard GPS] Empty position coordinates received.");
+            return;
+          }
+          const { latitude, longitude, accuracy } = position.coords;
+          console.log(`[Dashboard GPS] Foreground Location acquired: Lat: ${latitude}, Lon: ${longitude}, Acc: ${accuracy}m`);
+          
+          try {
+            console.log("[Dashboard GPS] Sending location telemetry to API...");
+            const res = await logLocationTelemetry(latitude, longitude, accuracy);
+            if (res.success && res.data) {
+              console.log(`[Dashboard GPS] Telemetry update succeeded. Gym: ${res.data.gymName}, Distance: ${res.data.distance}m`);
+              setTelemetry(res.data);
+              // Refresh stats to ensure check-in UI is synced
+              const statsRes = await getDashboardStats();
+              if (statsRes.success) setStats(statsRes.data);
+            } else {
+              console.warn(`[Dashboard GPS] Telemetry post rejected (Code: ${res.message})`);
+            }
+          } catch (err: any) {
+            console.warn("[Dashboard GPS] Telemetry update failed during API call:", err.message || err);
+          }
+        },
+        (err) => {
+          console.warn("[Dashboard GPS] Foreground location fetch failed:", err.message);
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 15000,
+          maximumAge: 10000,
+          forceRequestLocation: true,
+          showLocationDialog: true 
+        }
+      );
+    } catch (error) {
+      console.error("[Dashboard GPS] Error in fetchTelemetry:", error);
+    }
+  };
 
   const loadData = async () => {
     try {
-      const [profileRes, statsRes, workoutRes] = await Promise.all([
+      const [profileRes, statsRes, workoutRes, attendanceRes] = await Promise.all([
         getUserProfile(),
         getDashboardStats(),
-        getWorkoutPlans(),
+        getTodayRecommendedWorkout(),
+        getCurrentAttendanceStatus()
       ]);
 
       if (profileRes.success && profileRes.data) {
@@ -35,40 +112,28 @@ export default function MemberDashboardScreen({ navigation }: any) {
       if (workoutRes.success) {
         setWorkout(workoutRes.data);
       }
+      if (attendanceRes.success && attendanceRes.data) {
+        setTelemetry(attendanceRes.data);
+      }
+
+      fetchTelemetry();
     } catch (err) {
       console.warn("Error loading dashboard data:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     loadData();
-  }, []);
-
-  const handleAttendanceAction = async () => {
-    if (!stats) return;
-    try {
-      setChecking(true);
-      if (stats.isCheckedIn) {
-        const res = await checkOutAttendance();
-        if (res.success) {
-          dispatch(setActiveSession(null));
-          loadData();
-        }
-      } else {
-        const res = await checkInAttendance();
-        if (res.success) {
-          dispatch(setActiveSession(res.data));
-          loadData();
-        }
-      }
-    } catch (err) {
-      console.warn("Failed attendance action:", err);
-    } finally {
-      setChecking(false);
-    }
-  };
+    
+    // Add screen focus listener to refresh data
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   if (loading) {
     return (
@@ -83,7 +148,8 @@ export default function MemberDashboardScreen({ navigation }: any) {
   const streak = stats?.dayStreak ?? 0;
   const progress = stats?.goalProgress ?? 0;
   const membershipPlan = stats?.membership ?? "Basic";
-  const isCheckedIn = stats?.isCheckedIn ?? false;
+  const isCheckedIn = telemetry?.isCheckedIn ?? stats?.isCheckedIn ?? false;
+  const distance = telemetry?.distance ?? null;
 
   return (
     <View style={{ flex: 1 }}>
@@ -93,149 +159,169 @@ export default function MemberDashboardScreen({ navigation }: any) {
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={{ paddingBottom: 120, flexGrow: 1 }}
       >
-        {/* Hero Welcome Banner */}
-      <View style={[styles.heroBanner, { backgroundColor: colors.primary }]}>
-        <Text style={styles.heroWelcome}>Welcome Back, {displayName} 👋</Text>
-        <Text style={styles.heroSubText}>Stay consistent. Every workout brings you closer to your goal.</Text>
-        
-        <View style={styles.heroBtnContainer}>
-          <TouchableOpacity
-            onPress={handleAttendanceAction}
-            disabled={checking}
-            style={[styles.heroBtn, { backgroundColor: colors.black }]}
-          >
-            {checking ? (
-              <ActivityIndicator color={colors.primary} />
-            ) : (
-              <Text style={[styles.heroBtnText, { color: colors.white }]}>
-                {isCheckedIn ? "📅 CHECK OUT" : "📅 CHECK IN"}
+        {/* Dynamic GPS & Welcome Banner */}
+        <View style={[styles.heroBanner, { backgroundColor: colors.primary }]}>
+          <Text style={styles.heroWelcome}>Welcome Back, {displayName} 👋</Text>
+          <Text style={styles.heroSubText}>Stay consistent. Every workout brings you closer to your goal.</Text>
+          
+          <View style={[styles.gpsBadgeCard, { backgroundColor: colors.black, flexDirection: "column", alignItems: "flex-start", gap: 10 }]}>
+            <View style={{ width: "100%", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <Text style={{ color: "#ffffff", fontSize: 18, fontWeight: "900" }}>
+                {telemetry?.gymName || "FORGE Fitness & Fuel"}
               </Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Profile")}
-            style={[styles.heroBtn, { backgroundColor: colors.white }]}
-          >
-            <Text style={[styles.heroBtnText, { color: colors.black }]}>👤 PROFILE</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+              <TouchableOpacity
+                onPress={loadData}
+                style={[styles.gpsRefreshBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={styles.gpsRefreshText}>🔄 CHECK</Text>
+              </TouchableOpacity>
+            </View>
 
-      {/* Stats Cards */}
-      <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.primary }]}>{visits}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total Visits</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.success }]}>{streak}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Day Streak</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.secondary }]}>{progress}%</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Goal Progress</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.accent, fontSize: 20 }]}>{membershipPlan}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Membership</Text>
-        </View>
-      </View>
+            <Text style={[styles.gpsBadgeText, { color: isCheckedIn ? colors.success : colors.accent, fontSize: 15 }]}>
+              {isCheckedIn ? "🟢 Inside Gym" : "🔴 Outside Gym"}
+            </Text>
 
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
-        <View style={styles.actionsGrid}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Attendance")}
-            style={[styles.actionCell, { backgroundColor: colors.primary }]}
-          >
-            <Text style={styles.actionCellText}>📅 Attendance</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("WorkoutPlan")}
-            style={[styles.actionCell, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            <Text style={[styles.actionCellText, { color: colors.text }]}>🏋️ Workout</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("DietPlan")}
-            style={[styles.actionCell, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            <Text style={[styles.actionCellText, { color: colors.text }]}>🥗 Diet Plan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Payments")}
-            style={[styles.actionCell, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            <Text style={[styles.actionCellText, { color: colors.text }]}>💳 Billing</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <View style={{ marginTop: 2 }}>
+              <Text style={{ color: "#a1a1aa", fontSize: 12 }}>Distance:</Text>
+              <Text style={{ color: "#ffffff", fontSize: 15, fontWeight: "bold", marginTop: 2 }}>
+                {distance !== null ? `${distance} meters` : "Determining..."}
+              </Text>
+            </View>
 
-      {/* Today's Workout */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionCardTitle, { color: colors.text }]}>Today's Workout</Text>
-        <Text style={[styles.workoutTitle, { color: colors.primary }]}>
-          {workout?.title || "Custom Gym Routine"}
-        </Text>
-        {workout?.exercises && workout.exercises.length > 0 ? (
-          <View style={styles.exerciseList}>
-            {workout.exercises.map((ex: any, idx: number) => (
-              <View key={idx} style={styles.exerciseItem}>
-                <Text style={styles.checkIcon}>{ex.done ? "✅" : "⬜"}</Text>
-                <Text style={[styles.exerciseText, { color: colors.textMuted }]}>
-                  {ex.name} - {ex.sets} Sets {ex.reps ? `x ${ex.reps} Reps` : ""}
-                </Text>
-              </View>
-            ))}
+            <View style={{ marginTop: 2 }}>
+              <Text style={{ color: "#a1a1aa", fontSize: 12 }}>Attendance:</Text>
+              <Text style={{ color: isCheckedIn ? colors.success : colors.accent, fontSize: 15, fontWeight: "bold", marginTop: 2 }}>
+                {isCheckedIn ? "Auto Checked-In" : "Auto Checked-Out"}
+              </Text>
+            </View>
           </View>
-        ) : (
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-            No exercises assigned yet. Follow your standard weekly schedule.
+        </View>
+
+        {/* Stats Cards */}
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{visits}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total Visits</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.success }]}>{streak}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Day Streak</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.secondary }]}>{progress}%</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Goal Progress</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.accent, fontSize: 20 }]}>{membershipPlan}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Membership</Text>
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Attendance")}
+              style={[styles.actionCell, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.actionCellText}>📅 Attendance</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("WorkoutPlan")}
+              style={[styles.actionCell, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Text style={[styles.actionCellText, { color: colors.text }]}>🏋️ Workout</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("DietPlan")}
+              style={[styles.actionCell, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Text style={[styles.actionCellText, { color: colors.text }]}>🥗 Diet Plan</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Payments")}
+              style={[styles.actionCell, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Text style={[styles.actionCellText, { color: colors.text }]}>💳 Billing</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Today's Workout */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <Text style={[styles.sectionCardTitle, { color: colors.text, marginBottom: 0 }]}>Today's Workout</Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate("WorkoutPlan")}
+              style={{ backgroundColor: colors.primary + "20", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}
+            >
+              <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "bold" }}>▶ START ROUTINE</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <Text style={[styles.workoutTitle, { color: colors.primary }]}>
+            {workout?.isBeginner ? `🔰 Beginner Program - ${workout?.day}` : `🤖 AI 추천 Split - ${workout?.day}`}
           </Text>
-        )}
-      </View>
 
-      {/* Progress Tracker */}
-      <View style={styles.progressRow}>
-        <View style={[styles.halfCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.halfCardTitle, { color: colors.text }]}>Attendance Target</Text>
-          <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { backgroundColor: colors.primary, width: `${Math.min((visits / 30) * 100, 100)}%` },
-              ]}
-            />
-          </View>
-          <Text style={[styles.progressLabel, { color: colors.textMuted }]}>
-            {visits} / 30 Days this month
-          </Text>
+          {workout?.workout && workout.workout.length > 0 ? (
+            <View style={styles.exerciseList}>
+              {workout.workout.map((ex: any, idx: number) => (
+                <View key={idx} style={styles.exerciseItem}>
+                  <Text style={styles.checkIcon}>{ex.completed ? "✅" : "⬜"}</Text>
+                  <Text style={[styles.exerciseText, { color: colors.textMuted, textDecorationLine: ex.completed ? "line-through" : "none" }]}>
+                    {ex.title} - {ex.duration} Mins ({ex.category})
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+              No exercise videos assigned for today. Follow recovery programs.
+            </Text>
+          )}
         </View>
 
-        <View style={[styles.halfCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.halfCardTitle, { color: colors.text }]}>Body Target</Text>
-          <Text style={[styles.percentValue, { color: colors.success }]}>{progress}%</Text>
-          <Text style={[styles.progressLabel, { color: colors.textMuted }]}>Muscle Mass Progress</Text>
-        </View>
-      </View>
+        {/* Progress Tracker */}
+        <View style={styles.progressRow}>
+          <View style={[styles.halfCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.halfCardTitle, { color: colors.text }]}>Attendance Target</Text>
+            <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { backgroundColor: colors.primary, width: `${Math.min((visits / 30) * 100, 100)}%` },
+                ]}
+              />
+            </View>
+            <Text style={[styles.progressLabel, { color: colors.textMuted }]}>
+              {visits} / 30 Days this month
+            </Text>
+          </View>
 
-      {/* Achievements */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionCardTitle, { color: colors.text }]}>Achievements 🏆</Text>
-        <View style={styles.achievementsRow}>
-          <View style={[styles.badge, { backgroundColor: colors.background }]}>
-            <Text style={[styles.badgeText, { color: colors.text }]}>🏅 {streak} Day Streak</Text>
-          </View>
-          <View style={[styles.badge, { backgroundColor: colors.background }]}>
-            <Text style={[styles.badgeText, { color: colors.text }]}>💪 {visits} Gym Hits</Text>
-          </View>
-          <View style={[styles.badge, { backgroundColor: colors.background }]}>
-            <Text style={[styles.badgeText, { color: colors.text }]}>🔥 Goal Progress {progress}%</Text>
+          <View style={[styles.halfCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.halfCardTitle, { color: colors.text }]}>Body Target</Text>
+            <Text style={[styles.percentValue, { color: colors.success }]}>{progress}%</Text>
+            <Text style={[styles.progressLabel, { color: colors.textMuted }]}>Muscle Mass Progress</Text>
           </View>
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Achievements */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionCardTitle, { color: colors.text }]}>Achievements 🏆</Text>
+          <View style={styles.achievementsRow}>
+            <View style={[styles.badge, { backgroundColor: colors.background }]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>🏅 {streak} Day Streak</Text>
+            </View>
+            <View style={[styles.badge, { backgroundColor: colors.background }]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>💪 {visits} Gym Hits</Text>
+            </View>
+            <View style={[styles.badge, { backgroundColor: colors.background }]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>🔥 Goal Progress {progress}%</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -261,22 +347,35 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 20,
   },
-  heroBtnContainer: {
+  gpsBadgeCard: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderRadius: 16,
+    padding: 14,
     marginTop: 18,
   },
-  heroBtn: {
+  badgeLeft: {
     flex: 1,
-    height: 44,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
   },
-  heroBtnText: {
-    fontSize: 12,
+  gpsBadgeText: {
+    fontSize: 15,
     fontWeight: "bold",
-    letterSpacing: 0.5,
+  },
+  gpsDistanceText: {
+    color: "#a1a1aa",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  gpsRefreshBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  gpsRefreshText: {
+    color: "#000000",
+    fontSize: 11,
+    fontWeight: "bold",
   },
   statsGrid: {
     flexDirection: "row",
@@ -338,12 +437,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   workoutTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   exerciseList: {
-    marginTop: 8,
+    marginTop: 4,
     gap: 8,
   },
   exerciseItem: {
@@ -358,7 +457,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     fontStyle: "italic",
   },
   progressRow: {
