@@ -56,7 +56,7 @@ export default function MemberDashboardScreen({ navigation }: any) {
       Geolocation.getCurrentPosition(
         async (position) => {
           if (!position || !position.coords) {
-            console.warn("[Dashboard GPS] Empty position coordinates received.");
+            console.log("[Dashboard GPS] Empty position coordinates received.");
             return;
           }
           const { latitude, longitude, accuracy } = position.coords;
@@ -72,14 +72,14 @@ export default function MemberDashboardScreen({ navigation }: any) {
               const statsRes = await getDashboardStats();
               if (statsRes.success) setStats(statsRes.data);
             } else {
-              console.warn(`[Dashboard GPS] Telemetry post rejected (Code: ${res.message})`);
+              console.log(`[Dashboard GPS] Telemetry post rejected (Code: ${res.message})`);
             }
           } catch (err: any) {
-            console.warn("[Dashboard GPS] Telemetry update failed during API call:", err.message || err);
+            console.log("[Dashboard GPS] Telemetry update failed during API call:", err.message || err);
           }
         },
         (err) => {
-          console.warn("[Dashboard GPS] Foreground location fetch failed:", err.message);
+          console.log("[Dashboard GPS] Foreground location fetch failed:", err.message);
         },
         { 
           enableHighAccuracy: true, 

@@ -14,6 +14,7 @@ import { setUserProfile } from "../store/slices/userDetailsSlice";
 import { getUserProfile, logoutUser } from "../services/api";
 import { startLocationTracking, stopLocationTracking } from "../services/BackgroundLocationService";
 import { initNetworkSyncListener, stopNetworkSyncListener } from "../services/OfflineSyncService";
+import { SplashScreen } from "../screens/public/SplashScreen";
 
 // Import Screens (Placeholder imports - screens are built in src/screens)
 import OnboardingScreen from "../screens/auth/OnboardingScreen";
@@ -428,7 +429,8 @@ export const AppNavigator = () => {
 
   console.log("Inside AppNavigator, userProfile:", userProfile ? userProfile.role : "null");
 
-  const [loading, setLoading] = useState(true);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [animationComplete, setAnimationComplete] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
 
   useEffect(() => {
@@ -458,7 +460,7 @@ export const AppNavigator = () => {
       } catch (err) {
         console.warn("Bootstrap navigation state failed:", err);
       } finally {
-        setLoading(false);
+        setIsBootstrapping(false);
       }
     };
     bootstrapApp();
@@ -476,12 +478,12 @@ export const AppNavigator = () => {
     }
   }, [userProfile]);
 
-  if (loading) {
+  if (isBootstrapping || !animationComplete) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ color: colors.textMuted, marginTop: 10, fontSize: 14 }}>Loading session...</Text>
-      </View>
+      <SplashScreen
+        isReady={!isBootstrapping}
+        onAnimationComplete={() => setAnimationComplete(true)}
+      />
     );
   }
 
