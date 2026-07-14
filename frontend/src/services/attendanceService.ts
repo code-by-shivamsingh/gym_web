@@ -35,3 +35,12 @@ export const checkOutAttendance = async () => {
     return { success: false, message: error.response?.data?.message || "Check-out failed" };
   }
 };
+
+export const getCurrentAttendanceStatus = async () => {
+  try {
+    const response = await axiosClient.get("/attendance/current-status");
+    return { success: true, data: response.data.data };
+  } catch (error: any) {
+    return { success: false, data: null, message: error.response?.data?.message || "Failed to load current status" };
+  }
+};

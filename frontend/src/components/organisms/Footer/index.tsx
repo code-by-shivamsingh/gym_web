@@ -70,7 +70,7 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-3 text-gray-400">
-              <li>📍 Gwalior, Madhya Pradesh, India</li>
+              <li>📍 Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India</li>
               <li>📞 +91 98765 43210</li>
               <li>📧 info@forgefitness.com</li>
             </ul>

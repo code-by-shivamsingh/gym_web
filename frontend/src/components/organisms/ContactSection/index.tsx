@@ -38,7 +38,7 @@ export default function ContactSection() {
                   📍 Address
                 </h4>
                 <p className="text-gray-400">
-                  Gwalior, Madhya Pradesh, India
+                  Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India
                 </p>
               </div>
 

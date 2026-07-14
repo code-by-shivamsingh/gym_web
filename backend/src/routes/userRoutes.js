@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getProfile, updateProfile, uploadAvatar } = require('../controllers/userController');
+const { getProfile, updateProfile, uploadAvatar, logLocation } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -47,5 +47,6 @@ router.use(protect);
 router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
 router.post('/profile/avatar', upload.single('avatar'), uploadAvatar);
+router.post('/location', logLocation);
 
 module.exports = router;

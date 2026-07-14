@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/src/components/organisms/Navbar";
 import Footer from "@/src/components/organisms/Footer";
+import LocationSection from "@/src/components/organisms/LocationSection";
 import { getSettings } from "@/src/dialogs/invoice_config/services";
 
 export default function ContactPage() {
@@ -14,7 +15,7 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
 
   const [gymSettings, setGymSettings] = useState({
-    address: "Gwalior, Madhya Pradesh (M.P.), India",
+    address: "Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India",
     mobile: "+123 456 7890",
     whatsapp: "+91 98765 43210",
   });
@@ -25,7 +26,7 @@ export default function ContactPage() {
         const res = await getSettings();
         if (res.success && res.data) {
           setGymSettings({
-            address: res.data.address || "Gwalior, Madhya Pradesh (M.P.), India",
+            address: res.data.address || "Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India",
             mobile: res.data.mobile || "+123 456 7890",
             whatsapp: res.data.whatsapp || "+91 98765 43210",
           });
@@ -256,24 +257,8 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Embedded Map Section Placeholder */}
-      <section className="h-[400px] w-full bg-zinc-900 border-t border-zinc-800 relative">
-        <div className="absolute inset-0 bg-black/60 z-10 flex items-center justify-center pointer-events-none">
-          <p className="text-gray-400 text-sm font-semibold tracking-wider uppercase bg-zinc-950 px-6 py-3 border border-zinc-800 rounded-full">
-            🗺️ Google Maps Location Preview
-          </p>
-        </div>
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14318.257608146747!2d78.17551065!3d26.218287!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3976c6e1aa71f54f%3A0x633519d1fa92df5e!2sGwalior%2C%20Madhya%20Pradesh!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen={false}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          className="opacity-50 grayscale contrast-125"
-        />
-      </section>
+      {/* Find Our Gym Location Section */}
+      <LocationSection />
 
       <Footer />
     </div>

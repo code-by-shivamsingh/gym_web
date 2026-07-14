@@ -20,6 +20,27 @@ const MemberSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  age: {
+    type: Number,
+    default: null
+  },
+  weight: {
+    type: Number,
+    default: null
+  },
+  height: {
+    type: Number,
+    default: null
+  },
+  bmi: {
+    type: Number,
+    default: null
+  },
+  fitnessGoal: {
+    type: String,
+    enum: ['Weight Loss', 'Muscle Gain', 'Cardio Fitness', 'General Health', 'Beginner', ''],
+    default: ''
+  },
   plan: {
     type: String,
     default: 'Basic',

@@ -24,7 +24,7 @@ const generateInvoiceBuffer = async (payment) => {
       if (!settings) {
         settings = {
           gymName: 'Forge Gym',
-          address: 'Gwalior, Madhya Pradesh (M.P.), India',
+          address: 'Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India',
           mobile: '+1234567890',
           taxRate: 18
         };

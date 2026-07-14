@@ -9,7 +9,7 @@ const SettingsSchema = new mongoose.Schema({
   address: {
     type: String,
     required: true,
-    default: 'Gwalior, Madhya Pradesh (M.P.), India'
+    default: 'Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India'
   },
   mobile: {
     type: String,

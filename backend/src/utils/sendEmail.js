@@ -128,7 +128,7 @@ const sendEmail = async ({ to, subject, otp }) => {
           </div>
 
           <div class="footer">
-            © 2026 FORGE Fitness — Gwalior, Madhya Pradesh, India<br>
+            © 2026 FORGE Fitness — Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India<br>
             This is an automated message. Please do not reply.
           </div>
         </div>

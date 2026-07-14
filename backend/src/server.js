@@ -126,6 +126,7 @@ app.use('/api/members', require('./routes/memberRoutes'));
 app.use('/api/trainers', require('./routes/trainerRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/workouts', require('./routes/workoutRoutes'));
+app.use('/api/workout', require('./routes/workoutRoutes'));
 app.use('/api/diet', require('./routes/dietRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
@@ -189,6 +190,9 @@ const startServer = async () => {
     // Await database connection, exit process on failure
     try {
       await connectDB();
+      // Seeding gym location and workout videos
+      const seedDatabase = require('./database/seed');
+      await seedDatabase();
     } catch (err) {
       const fs = require('fs');
       const path = require('path');
@@ -232,6 +236,46 @@ const startServer = async () => {
     const server = app.listen(config.PORT, () => {
       console.log(`✅ Server Running on Port ${config.PORT}`);
     });
+
+    // Background interval check for automatic check-out (every 1 minute)
+    setInterval(async () => {
+      try {
+        const GymLocation = require('./models/GymLocation');
+        const Attendance = require('./models/Attendance');
+        const UserLocationTracking = require('./models/UserLocationTracking');
+        
+        const gym = await GymLocation.findOne();
+        if (!gym) return;
+
+        const activeSessions = await Attendance.find({ checkOut: null, source: 'Automatic GPS' });
+        const now = new Date();
+
+        for (const session of activeSessions) {
+          // Find the last inside tracking log for this user
+          const lastInsideLog = await UserLocationTracking.findOne({
+            userId: session.user,
+            isInside: true
+          }).sort({ createdAt: -1 });
+
+          const lastSeenInside = lastInsideLog ? lastInsideLog.createdAt : session.checkIn;
+          const timeOutside = now.getTime() - lastSeenInside.getTime();
+
+          if (timeOutside > 20 * 60 * 1000) {
+            session.checkOut = now;
+            session.checkOutTime = now; // compatibility
+            session.status = 'Completed';
+            
+            const durationMs = session.checkOut.getTime() - session.checkIn.getTime();
+            session.totalDuration = Math.round(durationMs / 60000);
+            
+            await session.save();
+            console.log(`[AUTO-CHECKOUT] User ID ${session.user} checked out automatically after 20 minutes outside gym.`);
+          }
+        }
+      } catch (err) {
+        console.error('Error in background checkAutoCheckouts:', err);
+      }
+    }, 60000);
 
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (err, promise) => {

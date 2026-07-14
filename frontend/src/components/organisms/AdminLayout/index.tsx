@@ -101,6 +101,13 @@ export default function AdminLayout({
             </Link>
 
             <Link
+              href="/admin/workouts"
+              className="block p-4 rounded-xl bg-zinc-900 hover:bg-yellow-400 hover:text-black transition"
+            >
+              🏋️ Workouts
+            </Link>
+
+            <Link
               href="/admin/reports"
               className="block p-4 rounded-xl bg-zinc-900 hover:bg-yellow-400 hover:text-black transition"
             >

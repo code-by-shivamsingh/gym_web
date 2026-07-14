@@ -1,4 +1,5 @@
 const Settings = require('../models/Settings');
+const GymLocation = require('../models/GymLocation');
 
 // @desc    Get gym settings
 // @route   GET /api/settings
@@ -10,13 +11,27 @@ const getSettings = async (req, res) => {
       // Create defaults if not found
       settings = await Settings.create({
         gymName: 'Forge Gym',
-        address: 'Gwalior, Madhya Pradesh (M.P.), India',
+        address: 'Airport Rd, near SBI Bank, Shubhanjalipuram, Maharajpura, Gwalior, Madhya Pradesh 474002, India',
         mobile: '+1234567890',
         whatsapp: '+919876543210',
         taxRate: 18
       });
     }
-    res.status(200).json({ success: true, data: settings });
+
+    let gymLoc = await GymLocation.findOne();
+    if (!gymLoc) {
+      gymLoc = await GymLocation.create({
+        gymName: settings.gymName || 'Forge Gym',
+        latitude: 26.2669994,
+        longitude: 78.2169687,
+        allowedRadius: 50
+      });
+    }
+
+    const data = settings.toObject();
+    data.gymLocation = gymLoc;
+
+    res.status(200).json({ success: true, data });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });
@@ -28,7 +43,7 @@ const getSettings = async (req, res) => {
 // @access  Private (Admin)
 const updateSettings = async (req, res) => {
   try {
-    const { gymName, address, mobile, whatsapp, taxRate } = req.body;
+    const { gymName, address, mobile, whatsapp, taxRate, latitude, longitude, allowedRadius } = req.body;
 
     let settings = await Settings.findOne();
     
@@ -49,7 +64,41 @@ const updateSettings = async (req, res) => {
       );
     }
 
-    res.status(200).json({ success: true, data: settings });
+    let gymLoc = await GymLocation.findOne();
+    const locData = {};
+    if (gymName) locData.gymName = gymName;
+    if (latitude !== undefined) locData.latitude = Number(latitude);
+    if (longitude !== undefined) locData.longitude = Number(longitude);
+    if (allowedRadius !== undefined) locData.allowedRadius = Number(allowedRadius);
+
+    if (Object.keys(locData).length > 0) {
+      if (!gymLoc) {
+        gymLoc = await GymLocation.create({
+          gymName: gymName || 'Forge Gym',
+          latitude: Number(latitude) || 26.2669994,
+          longitude: Number(longitude) || 78.2169687,
+          allowedRadius: Number(allowedRadius) || 50
+        });
+      } else {
+        gymLoc = await GymLocation.findByIdAndUpdate(
+          gymLoc._id,
+          { $set: locData },
+          { new: true, runValidators: true }
+        );
+      }
+    } else if (!gymLoc) {
+      gymLoc = await GymLocation.create({
+        gymName: settings.gymName || 'Forge Gym',
+        latitude: 26.2669994,
+        longitude: 78.2169687,
+        allowedRadius: 50
+      });
+    }
+
+    const data = settings.toObject();
+    data.gymLocation = gymLoc;
+
+    res.status(200).json({ success: true, data });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });

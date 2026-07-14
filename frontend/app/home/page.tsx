@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AboutSection from "@/src/components/organisms/AboutSection";
 import ContactSection from "@/src/components/organisms/ContactSection";
+import LocationSection from "@/src/components/organisms/LocationSection";
 import FeaturesSection from "@/src/components/organisms/FeaturesSection";
 import Footer from "@/src/components/organisms/Footer";
 import GallerySection from "@/src/components/organisms/GallerySection";
@@ -127,6 +128,11 @@ export default function HomePage() {
       {/* Newsletter / Contact form Block */}
       <div className="relative group border-t border-zinc-900">
         <ContactSection />
+      </div>
+
+      {/* Find Our Gym Location Section */}
+      <div className="relative group border-t border-zinc-900">
+        <LocationSection />
       </div>
 
       <Footer />
