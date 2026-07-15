@@ -1,22 +1,7 @@
 import axios from "axios";
-import { Platform } from "react-native";
 import * as Keychain from "react-native-keychain";
 
-// Dynamic API Base URL configured for physical devices/emulators via host IP
-// Change PHYSICAL_DEVICE_IP to your machine's local IP address if testing on a physical device.
-const PHYSICAL_DEVICE_IP = "192.168.1.52";
-// Set this to true if you are testing on a physical device in development
-const USE_PHYSICAL_DEVICE_IN_DEV = false;
-
-export const BASE_URL = Platform.select({
-  android: __DEV__
-    ? (USE_PHYSICAL_DEVICE_IN_DEV ? `http://${PHYSICAL_DEVICE_IP}:5000` : "http://10.0.2.2:5000")
-    : `http://${PHYSICAL_DEVICE_IP}:5000`,
-  ios: __DEV__
-    ? (USE_PHYSICAL_DEVICE_IN_DEV ? `http://${PHYSICAL_DEVICE_IP}:5000` : "http://localhost:5000")
-    : `http://${PHYSICAL_DEVICE_IP}:5000`,
-  default: `http://${PHYSICAL_DEVICE_IP}:5000`,
-});
+export const BASE_URL = "https://forge-gym-api.onrender.com";
 
 const axiosClient = axios.create({
   baseURL: `${BASE_URL}/api`,

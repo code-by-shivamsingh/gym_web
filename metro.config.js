@@ -12,7 +12,9 @@ const config = {
       /.*\.gradle.*/,
       /.*android\/app\/build.*/,
       /.*ios\/build.*/,
-      /.*@react-native\/gradle-plugin.*/
+      /.*@react-native\/gradle-plugin.*/,
+      /.*\.cxx.*/,
+      /.*android\/\.cxx.*/
     ]
   }
 };
