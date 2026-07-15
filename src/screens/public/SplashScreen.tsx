@@ -64,7 +64,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isReady, onAnimation
       <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={true} />
       <Animated.View style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         <Animated.Image
-          source={require("../../../assets/images/logo.webp")}
+          source={require("../../../assets/images/logo.png")}
           style={styles.logo}
           resizeMode="contain"
         />

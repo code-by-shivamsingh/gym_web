@@ -6,11 +6,15 @@ import * as Keychain from "react-native-keychain";
 // Change PHYSICAL_DEVICE_IP to your machine's local IP address if testing on a physical device.
 const PHYSICAL_DEVICE_IP = "192.168.1.52";
 // Set this to true if you are testing on a physical device in development
-const USE_PHYSICAL_DEVICE_IN_DEV = true;
+const USE_PHYSICAL_DEVICE_IN_DEV = false;
 
 export const BASE_URL = Platform.select({
-  android: __DEV__ ? "http://localhost:5000" : `http://${PHYSICAL_DEVICE_IP}:5000`,
-  ios: __DEV__ ? "http://localhost:5000" : `http://${PHYSICAL_DEVICE_IP}:5000`,
+  android: __DEV__
+    ? (USE_PHYSICAL_DEVICE_IN_DEV ? `http://${PHYSICAL_DEVICE_IP}:5000` : "http://10.0.2.2:5000")
+    : `http://${PHYSICAL_DEVICE_IP}:5000`,
+  ios: __DEV__
+    ? (USE_PHYSICAL_DEVICE_IN_DEV ? `http://${PHYSICAL_DEVICE_IP}:5000` : "http://localhost:5000")
+    : `http://${PHYSICAL_DEVICE_IP}:5000`,
   default: `http://${PHYSICAL_DEVICE_IP}:5000`,
 });
 
@@ -51,7 +55,7 @@ axiosClient.interceptors.response.use(
       originalRequest._retry = true;
       try {
         await Keychain.resetGenericPassword({ service: "user_session" });
-        
+
         // Dynamically require store and action to prevent circular dependency issues
         const { store } = require("../store/store");
         const { setUserProfile } = require("../store/slices/userDetailsSlice");
@@ -430,10 +434,10 @@ export const getMembershipPlans = async () => {
 export const createPaymentOrder = async (amount: number, method: string, plan: string, planId?: string) => {
   try {
     const response = await axiosClient.post("/payments/create-order", { amount, method, plan, planId });
-    return { 
-      success: true, 
-      data: response.data.data, 
-      paymentUrl: response.data.paymentUrl, 
+    return {
+      success: true,
+      data: response.data.data,
+      paymentUrl: response.data.paymentUrl,
       gateway: response.data.gateway,
       upiUrl: response.data.upiUrl,
       qrCodeBase64: response.data.qrCodeBase64
@@ -546,7 +550,7 @@ export const getTodayRecommendedWorkout = async () => {
     const response = await axiosClient.get("/workouts/progress");
     const progressRes = response.data.data;
     const currentDay = progressRes ? progressRes.currentDay : 1;
-    
+
     // Fetch detailed day
     const dayResponse = await axiosClient.get(`/workouts/day/${currentDay}`);
     return {
