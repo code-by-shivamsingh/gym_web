@@ -61,8 +61,8 @@
 
       <!-- Google Maps API Key Configuration -->
       <meta-data
-        android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyDummyKeyForGymMobileApp123456" />
+    android:name="com.google.android.geo.API_KEY"
+    android:value="AIzaSyDHn95G-ZQMuQ_huunLGXKNNUFPAPnRwEQ" />
 
     </application>
 </manifest>
