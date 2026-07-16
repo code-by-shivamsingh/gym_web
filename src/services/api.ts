@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as Keychain from "react-native-keychain";
 
-export const BASE_URL = "https://forge-gym-api.onrender.com";
+export const BASE_URL = "https://gym-web-fadr.onrender.com";
 
 const axiosClient = axios.create({
   baseURL: `${BASE_URL}/api`,
